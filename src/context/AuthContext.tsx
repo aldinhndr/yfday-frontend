@@ -18,27 +18,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        // Fetch session awal
         supabase.auth.getSession().then(({ data }) => {
             setSession(data.session)
             setLoading(false)
+        }).catch((err) => {
+            console.error('Error fetching initial auth session:', err)
+            setLoading(false)
         })
 
+        // Listener perubahan status otentikasi (login, logout, token refreshed)
         const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
             setSession(newSession)
+            setLoading(false)
         })
 
-        return () => listener.subscription.unsubscribe()
+        return () => {
+            listener.subscription.unsubscribe()
+        }
     }, [])
 
     const loginWithGoogle = async () => {
-        await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: { redirectTo: window.location.href },
-        })
+        try {
+            // Gunakan window.location.origin agar redirect URI selalu bersih ke domain utama
+            const redirectUrl = `${window.location.origin}`
+
+            const { error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: redirectUrl,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'consent',
+                    },
+                },
+            })
+
+            if (error) throw error
+        } catch (error) {
+            console.error('Google OAuth Login failed:', error)
+            throw error
+        }
     }
 
     const logout = async () => {
-        await supabase.auth.signOut()
+        try {
+            const { error } = await supabase.auth.signOut()
+            if (error) throw error
+        } catch (error) {
+            console.error('Logout failed:', error)
+            throw error
+        }
     }
 
     return (
