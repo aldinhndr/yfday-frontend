@@ -1,5 +1,6 @@
 // src/context/AuthContext.tsx
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/Supabase'
 
@@ -7,68 +8,59 @@ interface AuthContextType {
     user: User | null
     session: Session | null
     loading: boolean
-    loginWithGoogle: () => Promise<void>
+    loginWithGoogle: (targetPath?: string) => Promise<void>
     logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const RETURN_URL_KEY = 'yfd_return_url'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null)
     const [loading, setLoading] = useState(true)
+    const navigate = useNavigate()
 
     useEffect(() => {
-        // Fetch session awal
         supabase.auth.getSession().then(({ data }) => {
             setSession(data.session)
             setLoading(false)
-        }).catch((err) => {
-            console.error('Error fetching initial auth session:', err)
-            setLoading(false)
         })
 
-        // Listener perubahan status otentikasi (login, logout, token refreshed)
-        const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+        const { data: listener } = supabase.auth.onAuthStateChange((event, newSession) => {
             setSession(newSession)
             setLoading(false)
+
+            // Baru saja berhasil login → cek apakah ada halaman tujuan yang ditunda
+            if (event === 'SIGNED_IN') {
+                const returnUrl = sessionStorage.getItem(RETURN_URL_KEY)
+                if (returnUrl) {
+                    sessionStorage.removeItem(RETURN_URL_KEY)
+                    navigate(returnUrl, { replace: true })
+                }
+            }
         })
 
-        return () => {
-            listener.subscription.unsubscribe()
-        }
-    }, [])
+        return () => listener.subscription.unsubscribe()
+    }, [navigate])
 
-    const loginWithGoogle = async () => {
-        try {
-            // Gunakan window.location.origin agar redirect URI selalu bersih ke domain utama
-            const redirectUrl = `${window.location.origin}`
+    const loginWithGoogle = async (targetPath?: string) => {
+        const currentPath = targetPath || window.location.pathname + window.location.search
+        sessionStorage.setItem(RETURN_URL_KEY, currentPath)
 
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: redirectUrl,
-                    queryParams: {
-                        access_type: 'offline',
-                        prompt: 'consent',
-                    },
-                },
-            })
-
-            if (error) throw error
-        } catch (error) {
-            console.error('Google OAuth Login failed:', error)
-            throw error
-        }
+        // Redirect SELALU ke root — ini dijamin match "Site URL" di Supabase, tidak perlu wildcard rewel
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin,
+                queryParams: { access_type: 'offline', prompt: 'consent' },
+            },
+        })
+        if (error) throw error
     }
 
     const logout = async () => {
-        try {
-            const { error } = await supabase.auth.signOut()
-            if (error) throw error
-        } catch (error) {
-            console.error('Logout failed:', error)
-            throw error
-        }
+        const { error } = await supabase.auth.signOut()
+        if (error) throw error
     }
 
     return (
