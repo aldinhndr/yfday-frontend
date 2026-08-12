@@ -1,6 +1,7 @@
 // src/components/RequireLogin.tsx
 import { useAuth } from '../context/AuthContext'
 import { ReactNode, useState } from 'react'
+import NavbarSimple from './NavbarLogo'
 
 interface RequireLoginProps {
     children: ReactNode
@@ -36,7 +37,9 @@ export default function RequireLogin({ children }: RequireLoginProps) {
     // State 2: User belum terautentikasi
     if (!user) {
         return (
+
             <div className="min-h-screen bg-night text-cream flex flex-col items-center justify-center px-6 text-center">
+                <NavbarSimple />
                 <h2 className="font-display text-2xl font-bold mb-3">Login Dulu Yuk</h2>
                 <p className="text-cream/60 max-w-sm mb-8">
                     Untuk mendaftar lomba, kamu perlu login dengan akun Google terlebih dahulu.

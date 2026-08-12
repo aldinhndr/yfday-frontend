@@ -5,11 +5,15 @@ export const REKENING = {
 }
 
 export const GPIN_CHURCHES = [
-  'GPIN Polresta',
-  'GPIN Filipi',
-  'GPIN Hosana',
-  'GPIN Itera',
-  'GPIN Natar',
-  'GPIN Bukit Zaitun',
-  'GPIN Sidomulyo',
+  'GPIN Eklesia Mesuji',
+  'GPIN Eben Haezer Natar',
+  'GPIN Bukit Zaitun Panjang',
+  'GPIN Betlehem Sidomulyo',
+  'GPIN Filipi Way Halim',
+  'GPIN Gloria Kotabaru Itera', 
+  'GPIN Filadelfia Polresta',
+  'GPIN Hosanna Langkapura',
+  'GPIN Haleluya Bergen',
+  'GPIN Elshadday Karanganyar', 
+  'GPIN Perintisan Srimukti',
 ]
