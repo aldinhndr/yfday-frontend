@@ -9,7 +9,7 @@ const lombaList = [
   },
   {
     key: 'pes',
-    nama: 'PES',
+    nama: 'PES CONSOLE PS3/PS4',
     tag: 'Umum, Bebas',
     color: 'gold',
     desc: 'Terbuka untuk semua kalangan. Satu orang boleh ambil maksimal 2 slot.',

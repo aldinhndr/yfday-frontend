@@ -20,7 +20,7 @@ const ALLOWED_TYPE_LABEL_IMAGE = 'JPG, PNG, atau WEBP'
 const RULES_UMUM = [
   'Terbuka untuk semua kalangan / umum, tidak terbatas jemaat GPIN.',
   'Satu orang maksimal mengambil 2 slot pendaftaran.',
-  'Peserta membawa akun PES sendiri saat bertanding.',
+  'Peserta datang ke lokasi Lomba.',
 ]
 
 interface PesForm {

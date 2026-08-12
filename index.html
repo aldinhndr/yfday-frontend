@@ -1,38 +1,44 @@
 <!doctype html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Youth Fun Day — GPIN Lampung</title>
-    <meta name="description" content="Youth Fun Day: Turnamen Tenis Meja, PES, dan Badminton antar pemuda GPIN & umum." />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              night: '#10112B',
-              night2: '#171A44',
-              violet: '#7C5CFC',
-              gold: '#FFC145',
-              court: '#31D0AA',
-              cream: '#F4F2EC',
-            },
-            fontFamily: {
-              display: ['"Space Grotesk"', 'sans-serif'],
-              body: ['Inter', 'sans-serif'],
-              slab: ['"Bebas Neue"', 'sans-serif'],
-            }
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Youth Fun Day — GPIN Lampung</title>
+  <meta name="description" content="Youth Fun Day: Turnamen Tenis Meja, PES, dan Badminton antar pemuda GPIN & umum." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Bebas+Neue&display=swap"
+    rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            night: 'rgb(var(--color-night) / <alpha-value>)',
+            night2: 'rgb(var(--color-night2) / <alpha-value>)',
+            violet: 'rgb(var(--color-violet) / <alpha-value>)',
+            gold: 'rgb(var(--color-gold) / <alpha-value>)',
+            court: 'rgb(var(--color-court) / <alpha-value>)',
+            cream: 'rgb(var(--color-cream) / <alpha-value>)',
+          },
+          fontFamily: {
+            display: ['"Space Grotesk"', 'sans-serif'],
+            body: ['Inter', 'sans-serif'],
+            slab: ['"Bebas Neue"', 'sans-serif'],
           }
         }
       }
-    </script>
-  </head>
-  <body class="bg-night text-cream font-body antialiased">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+    }
+  </script>
+</head>
+
+<body class="bg-night text-cream font-body antialiased">
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ThemeToggle from './ThemeToggle'
 
 export default function NavbarSimple() {
     const { user, logout } = useAuth()
@@ -15,6 +16,7 @@ export default function NavbarSimple() {
                 {user && (
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2">
+                            <ThemeToggle />
                             {user.user_metadata?.avatar_url ? (
                                 <img
                                     src={user.user_metadata.avatar_url}

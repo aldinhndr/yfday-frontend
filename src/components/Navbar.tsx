@@ -1,3 +1,5 @@
+import ThemeToggle from './ThemeToggle'
+
 const links = [
   { href: '#lomba', label: 'Lomba' },
   { href: '#jadwal', label: 'Jadwal' },
@@ -22,12 +24,15 @@ export default function Navbar({ onDaftar }: NavbarProps) {
             <a key={l.href} href={l.href} className="hover:text-cream transition-colors">{l.label}</a>
           ))}
         </div>
-        <button
-          onClick={onDaftar}
-          className="text-sm px-4 py-2 rounded-full bg-gold text-night font-semibold hover:scale-105 transition-transform"
-        >
-          Daftar
-        </button>
+        <div className="flex items-center gap-3">
+          <ThemeToggle />
+          <button
+            onClick={onDaftar}
+            className="text-sm px-4 py-2 rounded-full bg-gold text-night font-semibold hover:scale-105 transition-transform"
+          >
+            Daftar
+          </button>
+        </div>
       </div>
     </nav>
   )
