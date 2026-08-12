@@ -91,6 +91,9 @@ export default function Hero({ onDaftar }: HeroProps) {
         <span className="text-[10px] uppercase tracking-[0.2em]">Scroll</span>
         <span className="w-px h-8 bg-gradient-to-b from-cream/40 to-transparent animate-bounce" />
       </div>
-    </section>
+
+      {/* Fade transisi ke section berikutnya — biar tidak ada garis batas keras */}
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-night2 pointer-events-none" />
+    </section >
   )
 }

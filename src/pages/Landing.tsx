@@ -19,9 +19,9 @@ export default function Landing() {
     <div className="bg-night text-cream">
       <Navbar onDaftar={scrollToLomba} />
       <Hero onDaftar={scrollToLomba} />
-      <LombaSection onPilihLomba={goDaftar} />
       <Jadwal />
       <History />
+      <LombaSection onPilihLomba={goDaftar} />
       <GpinIntro />
       <Footer onDaftar={scrollToLomba} />
     </div>
