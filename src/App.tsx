@@ -5,6 +5,8 @@ import Landing from './pages/Landing.tsx'
 import DaftarBadminton from './pages/DaftarBadminton.tsx'
 import DaftarPes from './pages/DaftarPes.tsx'
 import DaftarTenisMeja from './pages/DaftarTenisMeja.tsx'
+import AdminLoginPage from './pages/AdminLoginPage'
+import RequireAdmin from './components/RequireAdmin'
 import AdminDashboard from './pages/AdminDashboard.tsx'
 import { AdminProvider } from './context/AdminContext.tsx'
 
@@ -19,6 +21,7 @@ export default function App() {
               <Route path="/daftar/badminton" element={<DaftarBadminton />} />
               <Route path="/daftar/pes" element={<DaftarPes />} />
               <Route path="/daftar/tenis-meja" element={<DaftarTenisMeja />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </AdminProvider>

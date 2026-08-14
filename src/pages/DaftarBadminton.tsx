@@ -1,16 +1,18 @@
+// src/pages/DaftarBadminton.tsx
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import TextField from '../components/form/TextField.tsx'
-import PhoneField from '../components/form/PhoneField.tsx'
-import FileUpload from '../components/form/FileUpload.tsx'
-import FormStepper from '../components/form/FormStepper.tsx'
-import RulesBanner from '../components/form/RulesBanner.tsx'
-import RequireLogin from '../components/RequireLogin.tsx'
+import TextField from '../components/form/TextField'
+import PhoneField from '../components/form/PhoneField'
+import FileUpload from '../components/form/FileUpload'
+import FormStepper from '../components/form/FormStepper'
+import RulesBanner from '../components/form/RulesBanner'
+import RequireLogin from '../components/RequireLogin'
+import GpinQuiz from '../components/form/GpinQuiz'
 import { useAuth } from '../context/AuthContext'
 
-import { REKENING } from '../constants.ts'
-import { WHATSAPP_GROUPS } from '../lib/WAGroups.ts'
-import NavbarSimple from '../components/NavbarLogo.tsx'
+import { REKENING } from '../constants'
+import { WHATSAPP_GROUPS } from '../lib/WAGroups'
+import NavbarSimple from '../components/NavbarLogo'
 
 const KATEGORI = ['Ganda Putra', 'Ganda Putri', 'Ganda Campuran'] as const
 type Kategori = (typeof KATEGORI)[number] | ''
@@ -22,40 +24,35 @@ const KATEGORI_TO_API: Record<(typeof KATEGORI)[number], string> = {
 }
 
 const HTM = 75000
-const MAX_FILE_SIZE_MB = 5
-const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
-
-const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const ALLOWED_DOC_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
-const ALLOWED_TYPE_LABEL_IMAGE = 'JPG, PNG, atau WEBP'
-const ALLOWED_TYPE_LABEL_DOC = 'JPG, PNG, WEBP, atau PDF'
-
-// Contoh/template surat pengantar gereja yang bisa diunduh peserta sebelum mengisi
 const CONTOH_SURAT_URL = '/templates/contoh-surat-pengantar-gereja.docx'
 
-const RULES_UMUM = [
-  'Minimal salah satu peserta (Peserta 1) harus berasal dari gereja yang mengeluarkan Surat Pengantar tim ini.',
-  'Partner (Peserta 2) boleh berasal dari luar gereja tersebut, dengan syarat namanya turut dicantumkan di Surat Pengantar.',
-  'Jika gereja tidak berkenan mencantumkan nama partner yang bukan jemaatnya di Surat Pengantar, partner wajib melampirkan foto identitas diri (KTP/KTM/SIM/dll) sebagai gantinya.',
-]
-
 interface BadmintonForm {
+  isGpin: boolean
+  isGpinVerified: boolean
+
   kategori: Kategori
   namaTim: string
   gerejaAsal: string
   suratGereja: File | null
+
   peserta1Nama: string
   peserta1Foto: File | null
+
   peserta2Nama: string
   peserta2Foto: File | null
+  partnerLuarGpin: boolean
   peserta2LuarGereja: boolean
   peserta2Identitas: File | null
+
   noHp: string
   asalKota: string
   buktiBayar: File | null
 }
 
 const emptyForm: BadmintonForm = {
+  isGpin: false,
+  isGpinVerified: false,
+
   kategori: '',
   namaTim: '',
   gerejaAsal: '',
@@ -64,6 +61,7 @@ const emptyForm: BadmintonForm = {
   peserta1Foto: null,
   peserta2Nama: '',
   peserta2Foto: null,
+  partnerLuarGpin: false,
   peserta2LuarGereja: false,
   peserta2Identitas: null,
   noHp: '',
@@ -71,82 +69,7 @@ const emptyForm: BadmintonForm = {
   buktiBayar: null,
 }
 
-type FormErrors = Partial<Record<keyof BadmintonForm, string>>
-
-function checkFileSize(file: File | null): string | null {
-  if (file && file.size > MAX_FILE_SIZE_BYTES) {
-    return `Ukuran file maksimal ${MAX_FILE_SIZE_MB}MB, file kamu ${(file.size / 1024 / 1024).toFixed(1)}MB`
-  }
-  return null
-}
-
-function checkFileType(file: File | null, allowed: string[], label: string): string | null {
-  if (file && !allowed.includes(file.type)) {
-    return `Format file harus ${label} (format kamu: ${file.type || 'tidak diketahui'})`
-  }
-  return null
-}
-
-function validateStep(step: number, form: BadmintonForm): FormErrors {
-  const e: FormErrors = {}
-  if (step === 0) {
-    if (!form.kategori) e.kategori = 'Pilih kategori dulu ya'
-    if (!form.namaTim.trim()) e.namaTim = 'Nama tim wajib diisi'
-    if (!form.gerejaAsal.trim()) e.gerejaAsal = 'Gereja asal wajib diisi'
-    if (!form.suratGereja) e.suratGereja = 'Surat pengantar gereja wajib diunggah'
-    else {
-      const sizeErr = checkFileSize(form.suratGereja)
-      const typeErr = checkFileType(form.suratGereja, ALLOWED_DOC_TYPES, ALLOWED_TYPE_LABEL_DOC)
-      if (sizeErr) e.suratGereja = sizeErr
-      else if (typeErr) e.suratGereja = typeErr
-    }
-  }
-  if (step === 1) {
-    if (!form.peserta1Nama.trim()) e.peserta1Nama = 'Nama peserta 1 wajib diisi'
-    if (!form.peserta1Foto) {
-      e.peserta1Foto = 'Foto peserta 1 wajib diunggah'
-    } else {
-      const foto1Err = checkFileSize(form.peserta1Foto)
-      const foto1TypeErr = checkFileType(form.peserta1Foto, ALLOWED_IMAGE_TYPES, ALLOWED_TYPE_LABEL_IMAGE)
-      if (foto1Err) e.peserta1Foto = foto1Err
-      else if (foto1TypeErr) e.peserta1Foto = foto1TypeErr
-    }
-    if (!form.peserta2Nama.trim()) e.peserta2Nama = 'Nama peserta 2 wajib diisi'
-    if (!form.peserta2Foto) {
-      e.peserta2Foto = 'Foto peserta 2 wajib diunggah'
-    } else {
-      const foto2Err = checkFileSize(form.peserta2Foto)
-      const foto2TypeErr = checkFileType(form.peserta2Foto, ALLOWED_IMAGE_TYPES, ALLOWED_TYPE_LABEL_IMAGE)
-      if (foto2Err) e.peserta2Foto = foto2Err
-      else if (foto2TypeErr) e.peserta2Foto = foto2TypeErr
-    }
-    if (form.peserta2LuarGereja && !form.peserta2Identitas) {
-      e.peserta2Identitas = 'Foto identitas (KTP/KTM/SIM) wajib diunggah karena partner dari luar gereja'
-    } else {
-      const idErr = checkFileSize(form.peserta2Identitas)
-      const idTypeErr = checkFileType(form.peserta2Identitas, ALLOWED_DOC_TYPES, ALLOWED_TYPE_LABEL_DOC)
-      if (idErr) e.peserta2Identitas = idErr
-      else if (idTypeErr) e.peserta2Identitas = idTypeErr
-    }
-    if (!form.noHp.trim()) {
-      e.noHp = 'Nomor HP/WA wajib diisi'
-    } else if (form.noHp.length < 8) {
-      e.noHp = 'Nomor HP terlalu pendek'
-    }
-    if (!form.asalKota.trim()) e.asalKota = 'Asal kota/daerah wajib diisi'
-  }
-  if (step === 2) {
-    if (!form.buktiBayar) {
-      e.buktiBayar = 'Unggah bukti pembayaran dulu ya'
-    } else {
-      const sizeErr = checkFileSize(form.buktiBayar)
-      const typeErr = checkFileType(form.buktiBayar, ALLOWED_IMAGE_TYPES, ALLOWED_TYPE_LABEL_IMAGE)
-      if (sizeErr) e.buktiBayar = sizeErr
-      else if (typeErr) e.buktiBayar = typeErr
-    }
-  }
-  return e
-}
+type FormErrors = Partial<Record<keyof BadmintonForm | 'gpinError', string>>
 
 export default function DaftarBadminton() {
   const { session } = useAuth()
@@ -159,17 +82,77 @@ export default function DaftarBadminton() {
 
   const set = (patch: Partial<BadmintonForm>) => setForm((f) => ({ ...f, ...patch }))
 
-  const next = () => {
-    const e = validateStep(step, form)
-    setErrors(e)
-    if (Object.keys(e).length === 0) setStep((s) => Math.min(s + 1, 2))
+  // Helper boolean untuk mengecek apakah form sedang dikunci
+  const isLocked = form.isGpin && !form.isGpinVerified
+
+  const handleLockedClick = () => {
+    if (isLocked) {
+      setErrors((e) => ({
+        ...e,
+        gpinError: 'Jawab dan selesaikan verifikasi Hamba Tuhan di atas terlebih dahulu!',
+      }))
+    }
   }
+
+  const validateStep = (s: number): FormErrors => {
+    const e: FormErrors = {}
+    if (s === 0) {
+      if (form.isGpin && !form.isGpinVerified) {
+        e.gpinError = 'Jawab dan selesaikan verifikasi Hamba Tuhan di atas terlebih dahulu!'
+        return e
+      }
+
+      if (!form.kategori) e.kategori = 'Pilih kategori terlebih dahulu'
+      if (!form.namaTim.trim()) e.namaTim = 'Nama tim wajib diisi'
+
+      if (!form.isGpin) {
+        if (!form.gerejaAsal.trim()) e.gerejaAsal = 'Gereja asal wajib diisi'
+        if (!form.suratGereja) e.suratGereja = 'Surat pengantar gereja wajib diunggah'
+      }
+    }
+
+    if (s === 1) {
+      if (!form.peserta1Nama.trim()) e.peserta1Nama = 'Nama peserta 1 wajib diisi'
+      if (!form.isGpin && !form.peserta1Foto) e.peserta1Foto = 'Foto peserta 1 wajib diunggah'
+
+      if (!form.peserta2Nama.trim()) e.peserta2Nama = 'Nama peserta 2 wajib diisi'
+
+      if (form.isGpin) {
+        if (form.partnerLuarGpin && !form.peserta2Foto) {
+          e.peserta2Foto = 'Foto peserta 2 wajib diunggah karena partner dari luar GPIN'
+        }
+      } else {
+        if (!form.peserta2Foto) e.peserta2Foto = 'Foto peserta 2 wajib diunggah'
+        if (form.peserta2LuarGereja && !form.peserta2Identitas) {
+          e.peserta2Identitas = 'Foto identitas wajib diunggah'
+        }
+      }
+
+      if (!form.noHp.trim()) e.noHp = 'Nomor WhatsApp kontak tim wajib diisi'
+      else if (form.noHp.length < 8) e.noHp = 'Nomor HP tidak valid'
+
+      if (!form.isGpin && !form.asalKota.trim()) e.asalKota = 'Asal kota wajib diisi'
+    }
+
+    if (s === 2 && !form.buktiBayar) {
+      e.buktiBayar = 'Unggah bukti pembayaran transfer terlebih dahulu'
+    }
+
+    return e
+  }
+
+  const next = () => {
+    const errs = validateStep(step)
+    setErrors(errs)
+    if (Object.keys(errs).length === 0) setStep((s) => Math.min(s + 1, 2))
+  }
+
   const back = () => setStep((s) => Math.max(s - 1, 0))
 
   const submit = async () => {
-    const e = validateStep(2, form)
-    setErrors(e)
-    if (Object.keys(e).length > 0) return
+    const errs = validateStep(2)
+    setErrors(errs)
+    if (Object.keys(errs).length > 0) return
 
     setSubmitError(null)
     setSubmitting(true)
@@ -177,25 +160,35 @@ export default function DaftarBadminton() {
       const body = new FormData()
       body.append('kategori', KATEGORI_TO_API[form.kategori as (typeof KATEGORI)[number]])
       body.append('nama_team', form.namaTim)
-      body.append('gereja_asal', form.gerejaAsal)
+      body.append('is_gpin', String(form.isGpin))
+      body.append('no_hp', `+62${form.noHp}`)
       body.append('nama_peserta_1', form.peserta1Nama)
       body.append('nama_peserta_2', form.peserta2Nama)
-      body.append('no_hp', `+62${form.noHp}`)
-      body.append('asal_kota', form.asalKota)
-      body.append('peserta_2_luar_gereja', String(form.peserta2LuarGereja))
-      body.append('surat_gereja', form.suratGereja as File)
-      body.append('foto_peserta_1', form.peserta1Foto as File)
-      body.append('foto_peserta_2', form.peserta2Foto as File)
       body.append('bukti_bayar', form.buktiBayar as File)
-      if (form.peserta2LuarGereja && form.peserta2Identitas) {
-        body.append('peserta_2_identitas', form.peserta2Identitas)
+
+      if (form.isGpin) {
+        body.append('gpin_gereja', form.gerejaAsal)
+        body.append('partner_luar_gpin', String(form.partnerLuarGpin))
+        if (form.peserta1Foto) body.append('foto_peserta_1', form.peserta1Foto)
+        if (form.peserta2Foto) body.append('foto_peserta_2', form.peserta2Foto)
+        if (form.partnerLuarGpin && form.peserta2Identitas) {
+          body.append('peserta_2_identitas', form.peserta2Identitas)
+        }
+      } else {
+        body.append('gereja_asal', form.gerejaAsal)
+        body.append('asal_kota', form.asalKota)
+        body.append('peserta_2_luar_gereja', String(form.peserta2LuarGereja))
+        body.append('surat_gereja', form.suratGereja as File)
+        body.append('foto_peserta_1', form.peserta1Foto as File)
+        body.append('foto_peserta_2', form.peserta2Foto as File)
+        if (form.peserta2LuarGereja && form.peserta2Identitas) {
+          body.append('peserta_2_identitas', form.peserta2Identitas)
+        }
       }
 
       const res = await fetch(`${import.meta.env.VITE_API_URL}/api/badminton/register`, {
         method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session?.access_token}`,
-        },
+        headers: { Authorization: `Bearer ${session?.access_token}` },
         body,
       })
 
@@ -206,7 +199,7 @@ export default function DaftarBadminton() {
 
       setSubmitted(true)
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Terjadi kesalahan, coba lagi ya')
+      setSubmitError(err instanceof Error ? err.message : 'Terjadi kesalahan sistem')
     } finally {
       setSubmitting(false)
     }
@@ -221,14 +214,14 @@ export default function DaftarBadminton() {
           <p className="uppercase tracking-[0.3em] text-xs text-court font-semibold mb-3">Terkirim</p>
           <h1 className="font-display text-3xl font-bold mb-4">Pendaftaran Diterima</h1>
           <p className="text-cream/60 max-w-md mb-8">
-            Tim <span className="text-cream">{form.namaTim}</span> ({form.kategori}) sudah terdaftar.
-            Panitia akan memverifikasi bukti pembayaran dan surat gereja dalam 1–2 hari kerja.
-            Konfirmasi akan dikirim ke nomor +62{form.noHp}.
+            Tim <span className="text-cream font-medium">{form.namaTim}</span> ({form.kategori}) sudah terdaftar {form.isGpin ? '(Jalur Khusus GPIN)' : ''}.
+            Panitia akan memverifikasi data dalam 1–2 hari kerja.
           </p>
-          <a href={WHATSAPP_GROUPS.badminton.link}
+          <a
+            href={WHATSAPP_GROUPS.badminton.link}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#25D366] text-night font-semibold hover:scale-105 active:scale-95 transition-transform cursor-pointer mb-4"
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-full bg-[#25D366] text-night font-semibold hover:scale-105 transition-transform mb-4"
           >
             Gabung {WHATSAPP_GROUPS.badminton.nama} →
           </a>
@@ -252,105 +245,295 @@ export default function DaftarBadminton() {
           <FormStepper current={step} />
 
           <div className="bg-night2 border border-cream/10 rounded-2xl p-6 sm:p-8 space-y-5">
+            {/* ================= STEP 0 ================= */}
             {step === 0 && (
               <>
-                <RulesBanner rules={RULES_UMUM} />
-
-                <label className="block">
-                  <span className="text-sm text-cream/70 mb-1.5 block">Kategori <span className="text-gold">*</span></span>
-                  <div className="grid grid-cols-3 gap-2">
-                    {KATEGORI.map((k) => (
-                      <button
-                        type="button"
-                        key={k}
-                        onClick={() => set({ kategori: k })}
-                        className={`rounded-lg border px-3 py-2.5 text-sm transition-colors ${form.kategori === k ? 'border-violet bg-violet/15 text-cream' : 'border-cream/15 text-cream/60 hover:border-cream/35'
-                          }`}
-                      >
-                        {k}
-                      </button>
-                    ))}
+                {/* TOGGLE GPIN */}
+                <div className="p-4 rounded-xl border border-gold/30 bg-gold/5 flex items-center justify-between">
+                  <div>
+                    <span className="text-sm font-bold text-gold block">Jalur Khusus GPIN</span>
+                    <span className="text-xs text-cream/60">Aktifkan jika tim kamu berasal dari jemaat GPIN.</span>
                   </div>
-                  {errors.kategori && <span className="text-xs text-red-400 mt-1 block">{errors.kategori}</span>}
-                </label>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={form.isGpin}
+                      onChange={(e) =>
+                        set({
+                          isGpin: e.target.checked,
+                          isGpinVerified: false,
+                          gerejaAsal: '',
+                        })
+                      }
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-cream/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gold"></div>
+                  </label>
+                </div>
 
-                <TextField label="Nama Tim" name="namaTim" required value={form.namaTim}
-                  onChange={(e) => set({ namaTim: e.target.value })} error={errors.namaTim}
-                  placeholder="Bebas, misal: Smash Brothers" />
+                {/* MODUL KUIS GPIN */}
+                {form.isGpin && (
+                  <GpinQuiz
+                    selectedChurch={form.gerejaAsal}
+                    isVerified={form.isGpinVerified}
+                    onSelectChurch={(church) => set({ gerejaAsal: church, isGpinVerified: false })}
+                    onVerified={(church) => set({ isGpinVerified: true, gerejaAsal: church })}
+                  />
+                )}
 
-                <TextField label="Gereja Asal" name="gerejaAsal" required value={form.gerejaAsal}
-                  onChange={(e) => set({ gerejaAsal: e.target.value })} error={errors.gerejaAsal}
-                  placeholder="Misal: GPIN Way Halim" />
+                {errors.gpinError && (
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-2 animate-pulse">
+                    <span>🔒</span> {errors.gpinError}
+                  </div>
+                )}
 
-                <FileUpload label="Surat Pengantar dari Gereja" required file={form.suratGereja}
-                  onChange={(f) => set({ suratGereja: f })} error={errors.suratGereja}
-                  accept="image/jpeg,image/png,image/webp,application/pdf"
-                  hint="Foto atau PDF surat perwakilan gereja, untuk mengesahkan asal tim"
-                  templateUrl={CONTOH_SURAT_URL} templateLabel="Unduh contoh surat (.docx)" />
+                {/* AREA FORM DIBAWAH KUIS (DILOCK JIKA BELUM VERIFIKASI GPIN) */}
+                <div className="relative">
+                  {/* OVERLAY PENGUNCI / LOCK */}
+                  {isLocked && (
+                    <div
+                      onClick={handleLockedClick}
+                      className="absolute inset-0 z-20 bg-night/80 backdrop-blur-[2px] rounded-xl flex flex-col items-center justify-center p-4 text-center cursor-not-allowed border border-dashed border-gold/30"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gold/10 text-gold flex items-center justify-center text-lg mb-2 shadow-md">
+                        🔒
+                      </div>
+                      <p className="text-xs font-bold text-cream">Form Terkunci</p>
+                      <p className="text-[11px] text-cream/50 max-w-xs mt-0.5">
+                        Selesaikan verifikasi nama Hamba Tuhan GPIN di atas untuk membuka formulir ini.
+                      </p>
+                    </div>
+                  )}
+
+                  <div className={`space-y-5 transition-all ${isLocked ? 'opacity-30 pointer-events-none select-none' : 'opacity-100'}`}>
+                    {!form.isGpin && (
+                      <RulesBanner
+                        rules={[
+                          'Minimal salah satu peserta (Peserta 1) harus berasal dari gereja yang mengeluarkan Surat Pengantar.',
+                          'Partner (Peserta 2) boleh berasal dari luar gereja dengan melampirkan identitas.',
+                        ]}
+                      />
+                    )}
+
+                    {/* PILIH KATEGORI */}
+                    <label className="block">
+                      <span className="text-sm text-cream/70 mb-1.5 block">Kategori <span className="text-gold">*</span></span>
+                      <div className="grid grid-cols-3 gap-2">
+                        {KATEGORI.map((k) => (
+                          <button
+                            type="button"
+                            key={k}
+                            onClick={() => set({ kategori: k })}
+                            className={`rounded-lg border px-3 py-2.5 text-sm transition-colors ${form.kategori === k
+                                ? 'border-violet bg-violet/15 text-cream font-semibold'
+                                : 'border-cream/15 text-cream/60 hover:border-cream/35'
+                              }`}
+                          >
+                            {k}
+                          </button>
+                        ))}
+                      </div>
+                      {errors.kategori && <span className="text-xs text-red-400 mt-1 block">{errors.kategori}</span>}
+                    </label>
+
+                    <TextField
+                      label="Nama Tim"
+                      name="namaTim"
+                      required
+                      value={form.namaTim}
+                      onChange={(e) => set({ namaTim: e.target.value })}
+                      error={errors.namaTim}
+                      placeholder="Misal: Smash Brothers"
+                    />
+
+                    {!form.isGpin && (
+                      <>
+                        <TextField
+                          label="Gereja Asal"
+                          name="gerejaAsal"
+                          required
+                          value={form.gerejaAsal}
+                          onChange={(e) => set({ gerejaAsal: e.target.value })}
+                          error={errors.gerejaAsal}
+                          placeholder="Misal: GBI Sukarame"
+                        />
+
+                        <FileUpload
+                          label="Surat Pengantar dari Gereja"
+                          required
+                          file={form.suratGereja}
+                          onChange={(f) => set({ suratGereja: f })}
+                          error={errors.suratGereja}
+                          accept="image/jpeg,image/png,image/webp,application/pdf"
+                          hint="Foto atau PDF surat pengantar dari gereja asal"
+                          templateUrl={CONTOH_SURAT_URL}
+                          templateLabel="Unduh contoh surat (.docx)"
+                        />
+                      </>
+                    )}
+                  </div>
+                </div>
               </>
             )}
 
+            {/* ================= STEP 1 ================= */}
             {step === 1 && (
               <>
                 <div className="grid sm:grid-cols-2 gap-5">
-                  <div className="space-y-3">
-                    <TextField label="Nama Peserta 1" name="peserta1Nama" required value={form.peserta1Nama}
-                      onChange={(e) => set({ peserta1Nama: e.target.value })} error={errors.peserta1Nama} />
-                    <FileUpload label="Foto Peserta 1" required file={form.peserta1Foto}
-                      onChange={(f) => set({ peserta1Foto: f })} accept="image/jpeg,image/png,image/webp" hint="Foto bebas"
-                      error={errors.peserta1Foto} />
+                  {/* PESERTA 1 */}
+                  <div className="space-y-3 bg-night/50 p-4 rounded-xl border border-cream/10">
+                    <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Peserta 1 (Kapten)</h4>
+                    <TextField
+                      label="Nama Peserta 1"
+                      name="peserta1Nama"
+                      required
+                      value={form.peserta1Nama}
+                      onChange={(e) => set({ peserta1Nama: e.target.value })}
+                      error={errors.peserta1Nama}
+                    />
+                    <FileUpload
+                      label={`Foto Peserta 1 ${form.isGpin ? '(Opsional)' : ''}`}
+                      required={!form.isGpin}
+                      file={form.peserta1Foto}
+                      onChange={(f) => set({ peserta1Foto: f })}
+                      accept="image/jpeg,image/png,image/webp"
+                      hint="Foto bebas rapi"
+                      error={errors.peserta1Foto}
+                    />
                   </div>
-                  <div className="space-y-3">
-                    <TextField label="Nama Peserta 2" name="peserta2Nama" required value={form.peserta2Nama}
-                      onChange={(e) => set({ peserta2Nama: e.target.value })} error={errors.peserta2Nama} />
-                    <FileUpload label="Foto Peserta 2" required file={form.peserta2Foto}
-                      onChange={(f) => set({ peserta2Foto: f })} accept="image/jpeg,image/png,image/webp" hint="Foto bebas"
-                      error={errors.peserta2Foto} />
 
-                    <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={form.peserta2LuarGereja}
-                        onChange={(e) => set({ peserta2LuarGereja: e.target.checked, peserta2Identitas: e.target.checked ? form.peserta2Identitas : null })}
-                        className="mt-0.5 w-4 h-4 accent-violet flex-shrink-0"
-                      />
-                      <span className="text-xs text-cream/60 leading-relaxed">
-                        Peserta 2 (partner) berasal dari <span className="text-cream/85">luar gereja</span> dan namanya
-                        <span className="text-cream/85"> tidak</span> dicantumkan di Surat Pengantar
-                      </span>
-                    </label>
+                  {/* PESERTA 2 */}
+                  <div className="space-y-3 bg-night/50 p-4 rounded-xl border border-cream/10">
+                    <h4 className="text-xs font-bold text-gold uppercase tracking-wider">Peserta 2 (Partner)</h4>
+                    <TextField
+                      label="Nama Peserta 2"
+                      name="peserta2Nama"
+                      required
+                      value={form.peserta2Nama}
+                      onChange={(e) => set({ peserta2Nama: e.target.value })}
+                      error={errors.peserta2Nama}
+                    />
 
-                    {form.peserta2LuarGereja && (
-                      <FileUpload label="Foto Identitas Peserta 2" required file={form.peserta2Identitas}
-                        onChange={(f) => set({ peserta2Identitas: f })} error={errors.peserta2Identitas}
-                        accept="image/jpeg,image/png,image/webp,.pdf" hint="KTP / KTM / SIM / identitas resmi lain" />
+                    {form.isGpin ? (
+                      <div className="space-y-3 pt-1">
+                        <label className="flex items-center justify-between p-2.5 rounded-lg bg-night2 border border-cream/10 cursor-pointer">
+                          <span className="text-xs text-cream/70">Partner dari Luar GPIN?</span>
+                          <input
+                            type="checkbox"
+                            checked={form.partnerLuarGpin}
+                            onChange={(e) => set({ partnerLuarGpin: e.target.checked })}
+                            className="w-4 h-4 accent-gold"
+                          />
+                        </label>
+
+                        <FileUpload
+                          label={`Foto Peserta 2 ${form.partnerLuarGpin ? '(Wajib)' : '(Opsional)'}`}
+                          required={form.partnerLuarGpin}
+                          file={form.peserta2Foto}
+                          onChange={(f) => set({ peserta2Foto: f })}
+                          accept="image/jpeg,image/png,image/webp"
+                          hint="Foto bebas rapi"
+                          error={errors.peserta2Foto}
+                        />
+
+                        {form.partnerLuarGpin && (
+                          <FileUpload
+                            label="Kartu Identitas Partner (Opsional)"
+                            file={form.peserta2Identitas}
+                            onChange={(f) => set({ peserta2Identitas: f })}
+                            accept="image/jpeg,image/png,image/webp,.pdf"
+                            hint="KTP / KTM / SIM partner"
+                          />
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <FileUpload
+                          label="Foto Peserta 2"
+                          required
+                          file={form.peserta2Foto}
+                          onChange={(f) => set({ peserta2Foto: f })}
+                          accept="image/jpeg,image/png,image/webp"
+                          hint="Foto bebas rapi"
+                          error={errors.peserta2Foto}
+                        />
+
+                        <label className="flex items-start gap-2.5 pt-1 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={form.peserta2LuarGereja}
+                            onChange={(e) =>
+                              set({
+                                peserta2LuarGereja: e.target.checked,
+                                peserta2Identitas: e.target.checked ? form.peserta2Identitas : null,
+                              })
+                            }
+                            className="mt-0.5 w-4 h-4 accent-violet flex-shrink-0"
+                          />
+                          <span className="text-xs text-cream/60 leading-relaxed">
+                            Partner berasal dari <span className="text-cream/85">luar gereja</span>
+                          </span>
+                        </label>
+
+                        {form.peserta2LuarGereja && (
+                          <FileUpload
+                            label="Foto Identitas Peserta 2"
+                            required
+                            file={form.peserta2Identitas}
+                            onChange={(f) => set({ peserta2Identitas: f })}
+                            error={errors.peserta2Identitas}
+                            accept="image/jpeg,image/png,image/webp,.pdf"
+                            hint="KTP / KTM / SIM resmi"
+                          />
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
 
-                <PhoneField label="Nomor HP/WA" name="noHp" required value={form.noHp}
-                  onChange={(v) => set({ noHp: v })} error={errors.noHp} />
+                <PhoneField
+                  label="Nomor WhatsApp Kontak Tim"
+                  name="noHp"
+                  required
+                  value={form.noHp}
+                  onChange={(v) => set({ noHp: v })}
+                  error={errors.noHp}
+                />
 
-                <TextField label="Asal Kota/Daerah" name="asalKota" required value={form.asalKota}
-                  onChange={(e) => set({ asalKota: e.target.value })} error={errors.asalKota}
-                  placeholder="Misal: Bandar Lampung" />
+                {!form.isGpin && (
+                  <TextField
+                    label="Asal Kota/Daerah"
+                    name="asalKota"
+                    required
+                    value={form.asalKota}
+                    onChange={(e) => set({ asalKota: e.target.value })}
+                    error={errors.asalKota}
+                    placeholder="Misal: Bandar Lampung"
+                  />
+                )}
               </>
             )}
 
+            {/* ================= STEP 2 ================= */}
             {step === 2 && (
               <>
                 <div className="rounded-lg bg-night border border-cream/10 p-5">
-                  <p className="text-sm text-cream/60 mb-1">Biaya pendaftaran</p>
+                  <p className="text-sm text-cream/60 mb-1">Biaya pendaftaran {form.isGpin ? '(Jalur GPIN)' : ''}</p>
                   <p className="font-display text-2xl font-bold text-gold mb-4">Rp{HTM.toLocaleString('id-ID')} / tim</p>
                   <p className="text-sm text-cream/60 mb-1">Transfer ke</p>
                   <p className="text-cream font-semibold">{REKENING.bank} — {REKENING.nomor}</p>
                   <p className="text-cream/60 text-sm">a.n. {REKENING.atasNama}</p>
                 </div>
 
-                <FileUpload label="Bukti Pembayaran" required file={form.buktiBayar}
-                  onChange={(f) => set({ buktiBayar: f })} error={errors.buktiBayar}
+                <FileUpload
+                  label="Bukti Pembayaran"
+                  required
+                  file={form.buktiBayar}
+                  onChange={(f) => set({ buktiBayar: f })}
+                  error={errors.buktiBayar}
                   accept="image/jpeg,image/png,image/webp"
-                  hint="Screenshot atau foto struk transfer" />
+                  hint="Screenshot atau foto struk transfer"
+                />
 
                 {submitError && (
                   <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/30 rounded-lg px-4 py-2.5">
@@ -370,14 +553,17 @@ export default function DaftarBadminton() {
               ← Kembali
             </button>
             {step < 2 ? (
-              <button onClick={next} className="px-6 py-2.5 rounded-full bg-gold text-night font-semibold text-sm hover:scale-105 transition-transform">
+              <button
+                onClick={next}
+                className="px-6 py-2.5 rounded-full bg-gold text-night font-semibold text-sm hover:scale-105 transition-transform"
+              >
                 Lanjut →
               </button>
             ) : (
               <button
                 onClick={submit}
                 disabled={submitting}
-                className="px-6 py-2.5 rounded-full bg-court text-night font-semibold text-sm hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 rounded-full bg-court text-night font-semibold text-sm hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? 'Mengirim…' : 'Kirim Pendaftaran'}
               </button>

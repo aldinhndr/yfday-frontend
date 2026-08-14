@@ -12,7 +12,7 @@ interface NavItem {
     key: AdminSection
     label: string
     icon: typeof LayoutDashboard
-    roles: string[] // role yang boleh lihat menu ini
+    roles: string[]
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -44,8 +44,14 @@ function initialsFromEmail(email: string) {
 }
 
 export default function AdminSidebar({ role, email, active, onChange }: AdminSidebarProps) {
-    const { logout } = useAuth()
+    const { session, logout } = useAuth()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const [imgError, setImgError] = useState(false)
+
+    // Ambil avatar url dari Supabase Google OAuth metadata
+    const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture
+    const userName = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name
+
     const items = NAV_ITEMS.filter((i) => i.roles.includes(role))
 
     const content = (
@@ -72,12 +78,12 @@ export default function AdminSidebar({ role, email, active, onChange }: AdminSid
                             key={item.key}
                             onClick={() => { onChange(item.key); setMobileOpen(false) }}
                             className={`relative w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium
-                transition-all duration-200 text-left group
+                transition-all duration-200 text-left group cursor-pointer
                 ${isActive
                                     ? 'bg-gold/10 text-gold'
                                     : 'text-cream/55 hover:text-cream hover:bg-cream/[0.04]'}`}
                         >
-                            {/* accent bar kiri, cuma muncul saat aktif */}
+                            {/* Accent bar kiri */}
                             <span
                                 className={`absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-gold transition-all duration-200
                   ${isActive ? 'h-5 opacity-100' : 'h-0 opacity-0'}`}
@@ -96,12 +102,26 @@ export default function AdminSidebar({ role, email, active, onChange }: AdminSid
             {/* Profile & actions */}
             <div className="px-4 py-4 mt-2 border-t border-cream/10">
                 <div className="flex items-center gap-3 px-1 py-2">
-                    <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-violet to-gold flex items-center justify-center text-night text-xs font-bold">
-                        {initialsFromEmail(email)}
-                    </div>
+                    {/* Render Foto Google atau Fallback Inisial */}
+                    {avatarUrl && !imgError ? (
+                        <img
+                            src={avatarUrl}
+                            alt={userName || email}
+                            referrerPolicy="no-referrer"
+                            onError={() => setImgError(true)}
+                            className="w-9 h-9 shrink-0 rounded-full object-cover border border-cream/20 shadow-sm"
+                        />
+                    ) : (
+                        <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-violet to-gold flex items-center justify-center text-night text-xs font-bold shadow-sm">
+                            {initialsFromEmail(email)}
+                        </div>
+                    )}
+
                     <div className="min-w-0 flex-1">
-                        <p className="text-xs text-cream truncate leading-tight">{email}</p>
-                        <span className="inline-block mt-1 text-[9px] font-bold uppercase tracking-wide text-gold/90">
+                        <p className="text-xs text-cream truncate leading-tight font-medium" title={userName || email}>
+                            {userName || email}
+                        </p>
+                        <span className="inline-block mt-0.5 text-[9px] font-bold uppercase tracking-wide text-gold/90">
                             {ROLE_LABEL[role] || role}
                         </span>
                     </div>
@@ -111,7 +131,7 @@ export default function AdminSidebar({ role, email, active, onChange }: AdminSid
                     onClick={logout}
                     className="mt-2 w-full flex items-center justify-center gap-2 text-xs px-3 py-2.5 rounded-xl
                      border border-cream/10 text-cream/50 hover:text-cream hover:border-cream/25 hover:bg-cream/[0.03]
-                     transition-colors"
+                     transition-colors cursor-pointer"
                 >
                     <LogOut size={14} strokeWidth={1.8} />
                     Keluar
@@ -136,7 +156,7 @@ export default function AdminSidebar({ role, email, active, onChange }: AdminSid
                 <button
                     onClick={() => setMobileOpen(true)}
                     aria-label="Buka menu admin"
-                    className="w-9 h-9 rounded-lg border border-cream/15 flex items-center justify-center text-cream/70"
+                    className="w-9 h-9 rounded-lg border border-cream/15 flex items-center justify-center text-cream/70 cursor-pointer"
                 >
                     <Menu size={18} strokeWidth={1.8} />
                 </button>
@@ -150,7 +170,7 @@ export default function AdminSidebar({ role, email, active, onChange }: AdminSid
                         <button
                             onClick={() => setMobileOpen(false)}
                             aria-label="Tutup menu"
-                            className="absolute top-4 right-4 w-8 h-8 rounded-lg border border-cream/15 flex items-center justify-center text-cream/60"
+                            className="absolute top-4 right-4 w-8 h-8 rounded-lg border border-cream/15 flex items-center justify-center text-cream/60 cursor-pointer"
                         >
                             <X size={16} strokeWidth={1.8} />
                         </button>

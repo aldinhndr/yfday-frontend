@@ -1,7 +1,15 @@
+// src/pages/AdminDashboard.tsx
 import { useEffect, useState } from 'react'
 import RequireAdmin from '../components/RequireAdmin'
 import { useAuth } from '../context/AuthContext'
 import AdminSidebar, { type AdminSection } from '../components/admin/AdminSidebar'
+
+export interface AdminUser {
+    id: string
+    email: string
+    role: string
+    name?: string
+}
 
 interface RegistrationRow {
     id: string
@@ -75,7 +83,9 @@ export default function AdminDashboard() {
         }
     }
 
-    useEffect(() => { fetchData() }, [session])
+    useEffect(() => {
+        fetchData()
+    }, [session])
 
     const handleUpdateStatus = async (newStatus: 'verified' | 'rejected') => {
         if (!selectedRow || !session?.access_token) return
@@ -147,7 +157,7 @@ export default function AdminDashboard() {
 
     return (
         <RequireAdmin>
-            {(admin) => (
+            {(admin: AdminUser) => (
                 <div className="min-h-screen bg-night text-cream">
                     <AdminSidebar role={admin.role} email={admin.email} active={section} onChange={setSection} />
 
@@ -408,13 +418,17 @@ export default function AdminDashboard() {
                                     </label>
                                     <div className="flex gap-3 justify-end pt-2">
                                         <button
-                                            type="button" disabled={updatingStatus} onClick={() => handleUpdateStatus('rejected')}
+                                            type="button"
+                                            disabled={updatingStatus}
+                                            onClick={() => handleUpdateStatus('rejected')}
                                             className="px-4 py-2 rounded-full bg-red-500/20 text-red-400 font-semibold text-xs hover:bg-red-500/30 transition-colors disabled:opacity-50"
                                         >
                                             Tolak Pendaftaran
                                         </button>
                                         <button
-                                            type="button" disabled={updatingStatus} onClick={() => handleUpdateStatus('verified')}
+                                            type="button"
+                                            disabled={updatingStatus}
+                                            onClick={() => handleUpdateStatus('verified')}
                                             className="px-5 py-2 rounded-full bg-court text-night font-semibold text-xs hover:scale-105 transition-transform disabled:opacity-50"
                                         >
                                             {updatingStatus ? 'Memproses...' : 'Setujui & Verifikasi'}
