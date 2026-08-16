@@ -13,7 +13,7 @@ const lombaList = [
     tag: 'Umum, Bebas',
     color: 'gold',
     desc: 'Terbuka untuk semua kalangan. Satu orang boleh ambil maksimal 2 slot.',
-    info: ['HTM Rp25.000 / slot', 'Maks. 2 slot / orang', 'Bawa akun sendiri'],
+    info: ['HTM Rp25.000 / slot', 'Maks. 2 slot / orang'],
   },
   {
     key: 'badminton',
