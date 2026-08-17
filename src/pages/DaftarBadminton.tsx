@@ -150,24 +150,28 @@ export default function DaftarBadminton() {
   const back = () => setStep((s) => Math.max(s - 1, 0))
 
   const submit = async () => {
+    // GUARD CLAUSE: Cegah eksekusi ganda jika sedang dalam proses submit
+    if (submitting) return
+
     const errs = validateStep(2)
     setErrors(errs)
     if (Object.keys(errs).length > 0) return
 
     setSubmitError(null)
     setSubmitting(true)
+
     try {
       const body = new FormData()
       body.append('kategori', KATEGORI_TO_API[form.kategori as (typeof KATEGORI)[number]])
-      body.append('nama_team', form.namaTim)
+      body.append('nama_team', form.namaTim.trim())
       body.append('is_gpin', String(form.isGpin))
-      body.append('no_hp', `+62${form.noHp}`)
-      body.append('nama_peserta_1', form.peserta1Nama)
-      body.append('nama_peserta_2', form.peserta2Nama)
+      body.append('no_hp', `+62${form.noHp.trim()}`)
+      body.append('nama_peserta_1', form.peserta1Nama.trim())
+      body.append('nama_peserta_2', form.peserta2Nama.trim())
       body.append('bukti_bayar', form.buktiBayar as File)
 
       if (form.isGpin) {
-        body.append('gpin_gereja', form.gerejaAsal)
+        body.append('gpin_gereja', form.gerejaAsal.trim())
         body.append('partner_luar_gpin', String(form.partnerLuarGpin))
         if (form.peserta1Foto) body.append('foto_peserta_1', form.peserta1Foto)
         if (form.peserta2Foto) body.append('foto_peserta_2', form.peserta2Foto)
@@ -175,8 +179,8 @@ export default function DaftarBadminton() {
           body.append('peserta_2_identitas', form.peserta2Identitas)
         }
       } else {
-        body.append('gereja_asal', form.gerejaAsal)
-        body.append('asal_kota', form.asalKota)
+        body.append('gereja_asal', form.gerejaAsal.trim())
+        body.append('asal_kota', form.asalKota.trim())
         body.append('peserta_2_luar_gereja', String(form.peserta2LuarGereja))
         body.append('surat_gereja', form.suratGereja as File)
         body.append('foto_peserta_1', form.peserta1Foto as File)
@@ -325,8 +329,8 @@ export default function DaftarBadminton() {
                             key={k}
                             onClick={() => set({ kategori: k })}
                             className={`rounded-lg border px-3 py-2.5 text-sm transition-colors ${form.kategori === k
-                                ? 'border-violet bg-violet/15 text-cream font-semibold'
-                                : 'border-cream/15 text-cream/60 hover:border-cream/35'
+                              ? 'border-violet bg-violet/15 text-cream font-semibold'
+                              : 'border-cream/15 text-cream/60 hover:border-cream/35'
                               }`}
                           >
                             {k}
