@@ -67,17 +67,17 @@ const BRACKET_STYLES = `
     border-radius: 8px;
   }
   @keyframes marqueeSlow {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
-  }
-  .animate-marquee-slow {
-    display: inline-block;
-    white-space: nowrap;
-    animation: marqueeSlow 75s linear infinite;
-  }
-  .animate-marquee-slow:hover {
-    animation-play-state: paused;
-  }
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.animate-marquee-slow {
+  display: inline-block;
+  white-space: nowrap;
+  animation: marqueeSlow 105s linear infinite;
+}
+.animate-marquee-slow:hover {
+  animation-play-state: paused;
+}
 `;
 
 export default function PublicStagePes() {
@@ -231,13 +231,13 @@ export default function PublicStagePes() {
 
                 {/* RUNNING TICKER ALERT DI UJUNG BAWAH LAYAR */}
                 {showTicker && (
-                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-gold py-2.5 px-4 shadow-[0_-10px_30px_rgba(0,0,0,0.9)] backdrop-blur-md overflow-hidden flex items-center">
-                        <div className="shrink-0 bg-gold text-[#150B2E] px-3 py-0.5 rounded font-extrabold text-[11px] uppercase tracking-wider mr-4 shadow-md">
-                            PENGUMUMAN RESMI
+                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 border-t-2 border-gold py-3 px-5 shadow-[0_-12px_35px_rgba(0,0,0,0.95)] backdrop-blur-md overflow-hidden flex items-center">
+                        <div className="shrink-0 bg-gold text-[#150B2E] px-3.5 py-1 rounded font-black text-xs uppercase tracking-wider mr-4 shadow-lg">
+                            INFO RESMI TURNAMEN
                         </div>
                         <div className="overflow-hidden w-full whitespace-nowrap">
-                            <div className="animate-marquee-slow font-mono text-[13px] text-cream font-medium tracking-wide">
-                                📌 <span className="text-gold font-bold">RULES & REGULASI TURNAMEN PES:</span> Sistem Knockout (Gugur) • Durasi 10 Menit Regular Time • Extra Time & Penalti jika skor imbang • Dilarang Pause saat bola aktif (Hanya boleh saat bola out/foul) • Keputusan Panitia & Wasit Mutlak. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🏸 <span className="text-[#38BDF8] font-bold">PENDAFTARAN BADMINTON:</span> Masih Dibuka untuk kategori Ganda Putra & Ganda Campuran sampai tanggal 25 Agustus 2026. Segera daftarkan tim Anda sekarang di meja registrasi atau website resmi!
+                            <div className="animate-marquee-slow font-mono text-[15px] font-bold tracking-wider text-cream uppercase">
+                                📌 <span className="text-gold">RULES & REGULASI PES:</span> BABAK PERTAMA S/D 8 BESAR DURASI 2X7 MENIT (ET & PK ON) • SEMIFINAL S/D FINAL DURASI 10 MENIT (ET & PK ON) • DILARANG MENGGUNAKAN TEAM KLASIK • TIM / NEGARA BOLEH SAMA • DILARANG KERAS PAUSE SAAT BOLA SEDANG AKTIF (HANYA SAAT OUT / PELANGGARAN) • KEPUTUSAN PANITIA & WASIT BERSIFAT MUTLAK. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🏸 <span className="text-[#38BDF8]">INFO BADMINTON:</span> PENDAFTARAN MASIH TERBUKA UNTUK KATEGORI GANDA PUTRA & GANDA CAMPURAN SAMPAI TANGGAL 25 AGUSTUS 2026. DAFTAR SEKARANG DI MEJA REGISTRASI ATAU WEBSITE RESMI!
                             </div>
                         </div>
                     </div>
