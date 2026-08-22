@@ -36,6 +36,7 @@ export default function AdminRollingPes() {
     const [isRolling, setIsRolling] = useState(false);
     const [statusLine, setStatusLine] = useState('');
     const [opponentCallout, setOpponentCallout] = useState('');
+    const [showTicker, setShowTicker] = useState(false);
 
     const [reelLeftActive, setReelLeftActive] = useState(false);
     const [reelRightActive, setReelRightActive] = useState(false);
@@ -61,10 +62,17 @@ export default function AdminRollingPes() {
             leftFilled,
             rightFilled,
             history,
+            showTicker,
             ...extra
         };
         channelRef.current?.postMessage(payload);
         localStorage.setItem('pes_bracket_live', JSON.stringify(payload));
+    };
+
+    const toggleTicker = () => {
+        const nextState = !showTicker;
+        setShowTicker(nextState);
+        broadcastState({ showTicker: nextState });
     };
 
     const handleStartDraw = () => {
@@ -91,7 +99,8 @@ export default function AdminRollingPes() {
             halfSize: half,
             leftFilled: {},
             rightFilled: {},
-            history: []
+            history: [],
+            showTicker
         };
         channelRef.current?.postMessage(payload);
         localStorage.setItem('pes_bracket_live', JSON.stringify(payload));
@@ -232,6 +241,61 @@ export default function AdminRollingPes() {
         }
     };
 
+    const undoLast = () => {
+        if (history.length === 0 || isRolling) return;
+        const [last, ...restHistory] = history;
+
+        const nextLeft = { ...leftFilled };
+        const nextRight = { ...rightFilled };
+        last.positions.forEach(p => {
+            if (p.side === 'left') delete nextLeft[p.num];
+            else delete nextRight[p.num];
+        });
+
+        last.positions.forEach(p => {
+            if (p.side === 'left') {
+                setLeftAvail(prev => [...prev, p.num].sort((a, b) => a - b));
+            } else {
+                setRightAvail(prev => [...prev, p.num].sort((a, b) => a - b));
+            }
+        });
+
+        setLeftFilled(nextLeft);
+        setRightFilled(nextRight);
+        setHistory(restHistory);
+
+        broadcastState({
+            leftFilled: nextLeft,
+            rightFilled: nextRight,
+            history: restHistory,
+            lastPositions: [],
+            opponentCallout: ''
+        });
+    };
+
+    const handleResetAll = () => {
+        if (!window.confirm('Reset semua undian dan kembali ke pengaturan awal?')) return;
+        setIsSetup(true);
+        setTotalSlotsInput('');
+        setNumLeft('--');
+        setNumRight('--');
+        setReelLeftActive(false);
+        setReelRightActive(false);
+        setStatusLine('');
+        setOpponentCallout('');
+
+        broadcastState({
+            isSetup: true,
+            totalSlots: 0,
+            halfSize: 0,
+            leftFilled: {},
+            rightFilled: {},
+            history: [],
+            lastPositions: [],
+            opponentCallout: ''
+        });
+    };
+
     const handleOpenStageWindow = () => {
         window.open('/stage/pes', '_blank', 'width=1280,height=720');
     };
@@ -240,10 +304,19 @@ export default function AdminRollingPes() {
         <div className="min-h-screen bg-[#150B2E] text-[#EDE9FE] font-sans pb-20">
             <NavbarSimple />
 
-            {/* Ditambahkan padding top pt-28 sm:pt-32 agar turun dan tidak tertutup navbar */}
             <div className="max-w-[1180px] mx-auto px-5 pt-28 sm:pt-32">
                 <header className="text-center mb-8 relative flex flex-col items-center">
-                    <div className="w-full flex justify-end mb-2 sm:mb-0 sm:absolute sm:right-0 sm:top-0">
+                    <div className="w-full flex justify-end gap-3 mb-2 sm:mb-0 sm:absolute sm:right-0 sm:top-0">
+                        <button
+                            type="button"
+                            onClick={toggleTicker}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg backdrop-blur-sm border ${showTicker
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                    : 'bg-white/5 border-white/20 text-cream/60 hover:text-white'
+                                }`}
+                        >
+                            📢 {showTicker ? 'Sembunyikan Running Text' : 'Munculkan Running Text'}
+                        </button>
                         <button
                             onClick={handleOpenStageWindow}
                             className="px-4 py-2 bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#38BDF8] rounded-xl text-xs font-bold hover:bg-[#38BDF8]/30 transition-all cursor-pointer shadow-lg backdrop-blur-sm"
@@ -309,11 +382,57 @@ export default function AdminRollingPes() {
                             <div className="text-center font-mono text-xs text-[#A78BFA] mt-1 font-bold">{opponentCallout || '\u00A0'}</div>
                         </div>
 
-                        {/* STATUS REKAP */}
+                        {/* STATUS REKAP & RIWAYAT */}
                         <div className="flex justify-between font-mono text-xs text-[#b3aecb] px-2">
                             <span>Sisa Kiri: <b className="text-[#A78BFA]">{leftAvail.length}</b></span>
                             <span>Total: {totalSlots} Slot</span>
                             <span>Sisa Kanan: <b className="text-[#A78BFA]">{rightAvail.length}</b></span>
+                        </div>
+
+                        {/* RIWAYAT PENGUNDIAN */}
+                        <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-6">
+                            <div className="font-mono text-xs tracking-[0.24em] text-[#38BDF8] uppercase font-bold mb-3">
+                                Riwayat Undian
+                            </div>
+
+                            {history.length === 0 ? (
+                                <div className="text-center text-[#b3aecb] text-xs py-4">Belum ada peserta di-roll.</div>
+                            ) : (
+                                <div className="divide-y divide-[#A78BFA]/20">
+                                    {history.map((h, idx) => (
+                                        <div key={`${h.name}-${idx}`} className="flex justify-between items-center py-2.5 text-xs">
+                                            <div>
+                                                <div className="font-bold text-sm text-[#EDE9FE]">
+                                                    {h.name} <span className="text-[11px] font-normal text-[#b3aecb]">({h.slots} slot)</span>
+                                                </div>
+                                                <div className="font-mono text-[#A78BFA] text-[11px] mt-0.5">
+                                                    {h.positions.map(p => `${p.side === 'left' ? 'KIRI' : 'KANAN'} #${String(p.num).padStart(2, '0')}`).join('  +  ')}
+                                                </div>
+                                            </div>
+                                            {idx === 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={undoLast}
+                                                    disabled={isRolling}
+                                                    className="px-2.5 py-1 rounded-lg border border-[#A78BFA]/30 text-[#b3aecb] hover:border-red-400 hover:text-red-400 transition-colors text-[11px] cursor-pointer"
+                                                >
+                                                    Undo
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="flex justify-end mt-4 pt-3 border-t border-[#A78BFA]/10">
+                                <button
+                                    type="button"
+                                    onClick={handleResetAll}
+                                    className="px-4 py-2 rounded-xl border border-[#A78BFA]/30 text-[#b3aecb] text-xs font-semibold hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"
+                                >
+                                    Reset Semua
+                                </button>
+                            </div>
                         </div>
                     </section>
                 )}

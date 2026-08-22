@@ -27,6 +27,7 @@ interface SyncPayload {
     rightFilled?: Record<number, SlotData>;
     lastPositions?: RollPosition[];
     opponentCallout?: string;
+    showTicker?: boolean;
 }
 
 const BRACKET_STYLES = `
@@ -63,10 +64,20 @@ const BRACKET_STYLES = `
     animation: matchPulse 1.7s ease-out;
     border-radius: 8px;
   }
+  @keyframes marquee {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-marquee {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 38s linear infinite;
+  }
 `;
 
 export default function PublicStagePes() {
     const [callout, setCallout] = useState('');
+    const [showTicker, setShowTicker] = useState(false);
 
     const bracketLeftRef = useRef<HTMLDivElement>(null);
     const bracketRightRef = useRef<HTMLDivElement>(null);
@@ -113,6 +124,7 @@ export default function PublicStagePes() {
         if (cached) {
             const parsed: SyncPayload = JSON.parse(cached);
             if (parsed.opponentCallout) setCallout(parsed.opponentCallout);
+            if (typeof parsed.showTicker === 'boolean') setShowTicker(parsed.showTicker);
             setTimeout(() => drawBracketTree(parsed), 100);
         }
 
@@ -120,6 +132,7 @@ export default function PublicStagePes() {
         channel.onmessage = (event: MessageEvent<SyncPayload>) => {
             if (event.data?.type !== 'SYNC_STATE') return;
             if (event.data.opponentCallout) setCallout(event.data.opponentCallout);
+            if (typeof event.data.showTicker === 'boolean') setShowTicker(event.data.showTicker);
             drawBracketTree(event.data);
         };
 
@@ -131,7 +144,7 @@ export default function PublicStagePes() {
     }, []);
 
     return (
-        <div className="min-h-screen w-full overflow-auto bg-[#0a0716] flex justify-center">
+        <div className="min-h-screen w-full overflow-auto bg-[#0a0716] flex justify-center pb-12">
             <div
                 className="bg-[#150B2E] text-[#EDE9FE] flex flex-col select-none shrink-0"
                 style={{ width: STAGE_WIDTH }}
@@ -140,9 +153,8 @@ export default function PublicStagePes() {
 
                 <NavbarSimple />
 
-                {/* Kontainer utama rapat dan pas di bawah navbar */}
                 <div className="flex-1 flex flex-col justify-start px-6 pt-24 pb-4">
-                    {/* HEADER STAGE RAPAT */}
+                    {/* HEADER STAGE */}
                     <header className="text-center mb-3">
                         <div className="font-mono text-[10px] tracking-[0.3em] text-[#A78BFA] uppercase">
                             YouthFunDay · LIVE BRACKET DRAW
@@ -155,13 +167,11 @@ export default function PublicStagePes() {
                         </div>
                     </header>
 
-                    {/* VISUAL BRACKET TREE LANGSUNG MENEMPEL */}
+                    {/* VISUAL BRACKET TREE */}
                     <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
                         <div className="tree-wrap" id="treeWrap">
-                            {/* BAGAN KIRI */}
                             <div className="tree-half" ref={bracketLeftRef} />
 
-                            {/* FINAL & JUARA 3 (TENGAH) */}
                             <div className="w-[140px] flex flex-col items-center justify-center gap-4 px-2">
                                 <div className="w-full text-center border border-dashed border-[#A78BFA]/40 rounded-xl p-3 bg-white/5 shadow-[0_0_20px_rgba(167,139,250,0.15)]">
                                     <div className="font-mono text-[10px] tracking-wider text-[#A78BFA] uppercase font-bold mb-1">
@@ -182,7 +192,6 @@ export default function PublicStagePes() {
                                 </div>
                             </div>
 
-                            {/* BAGAN KANAN (DICERMINKAN) */}
                             <div className="tree-half right-half" ref={bracketRightRef} />
                         </div>
                     </div>
@@ -191,6 +200,20 @@ export default function PublicStagePes() {
                         YOUTH FUN DAY 2026 · REAL-TIME STAGE SYNC
                     </footer>
                 </div>
+
+                {/* RUNNING TICKER ALERT DI UJUNG BAWAH */}
+                {showTicker && (
+                    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/90 border-t-2 border-gold py-2 px-4 shadow-[0_-10px_25px_rgba(0,0,0,0.8)] backdrop-blur-md overflow-hidden flex items-center">
+                        <div className="shrink-0 bg-gold text-[#150B2E] px-2.5 py-0.5 rounded font-extrabold text-[11px] uppercase tracking-wider mr-4 shadow">
+                            INFO PENTING
+                        </div>
+                        <div className="overflow-hidden w-full whitespace-nowrap">
+                            <div className="animate-marquee font-mono text-xs text-cream font-medium tracking-wide">
+                                📌 <span className="text-gold font-bold">REGULASI INTI PES:</span> Sistem Knockout (Gugur) • Durasi 10 Menit Regular Time • Extra Time & Penalti jika imbang • Dilarang Pause saat bola berjalan (Kecuali bola mati / Out) • Keputusan Panitia & Wasit Mutlak. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 🏸 <span className="text-[#38BDF8] font-bold">INFO BADMINTON:</span> Masih Terbuka Pendaftaran untuk kategori Ganda Putra & Ganda Campuran sampai tanggal 25 Agustus 2026. Segera daftarkan tim Anda sekarang melalui website resmi!
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -1,5 +1,6 @@
 // src/pages/AdminDashboard.tsx
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import RequireAdmin from '../components/RequireAdmin'
 import { useAuth } from '../context/AuthContext'
 import AdminSidebar, { type AdminSection } from '../components/admin/AdminSidebar'
@@ -38,7 +39,6 @@ interface StatsData {
     }>
 }
 
-// HTM per lomba — dipakai untuk rekonsiliasi keuangan (estimasi pemasukan)
 const HTM: Record<string, { label: string; harga: number; satuan: string }> = {
     pes: { label: 'PES', harga: 25000, satuan: 'slot' },
     badminton: { label: 'Badminton', harga: 75000, satuan: 'tim' },
@@ -132,7 +132,7 @@ export default function AdminDashboard() {
     const formatLabel = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
     const isMediaUrl = (val: any) => typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://'))
 
-    // --- Rekonsiliasi Keuangan ---
+    // Rekonsiliasi Keuangan
     const financeRows = registrations.filter((r) => HTM[r._lomba])
     const financeSummary = Object.keys(HTM).map((lomba) => {
         const rows = financeRows.filter((r) => r._lomba === lomba)
@@ -161,16 +161,46 @@ export default function AdminDashboard() {
                 <div className="min-h-screen bg-night text-cream">
                     <AdminSidebar role={admin.role} email={admin.email} active={section} onChange={setSection} />
 
-                    {/* Konten utama — margin kiri untuk sidebar desktop, padding atas untuk topbar mobile */}
                     <main className="lg:pl-64 pt-16 lg:pt-0">
                         <div className="max-w-6xl mx-auto px-6 py-8">
 
                             {/* ============ OVERVIEW ============ */}
                             {section === 'overview' && (
                                 <>
-                                    <div className="mb-8">
-                                        <h1 className="font-display text-2xl sm:text-3xl font-bold">Ringkasan</h1>
-                                        <p className="text-sm text-cream/50 mt-1">Total pendaftaran seluruh cabang lomba Youth Fun Day 2026</p>
+                                    <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
+                                        <div>
+                                            <h1 className="font-display text-2xl sm:text-3xl font-bold">Ringkasan</h1>
+                                            <p className="text-sm text-cream/50 mt-1">Total pendaftaran seluruh cabang lomba Youth Fun Day 2026</p>
+                                        </div>
+                                    </div>
+
+                                    {/* SHORTCUT TURNAMEN PES KHUSUS HARI-H */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                        <Link
+                                            to="/admin/rolling/pes"
+                                            className="group bg-gradient-to-br from-[#3B1E7A]/60 to-[#150B2E] border border-[#A78BFA]/30 hover:border-[#A78BFA] p-5 rounded-2xl transition-all shadow-lg flex items-center justify-between"
+                                        >
+                                            <div>
+                                                <span className="text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider bg-[#A78BFA]/10 px-2 py-0.5 rounded border border-[#A78BFA]/20">Ruang Kontrol</span>
+                                                <h3 className="font-display text-lg font-bold text-white mt-1.5 group-hover:text-[#A78BFA] transition-colors">🎮 Controller Rolling PES</h3>
+                                                <p className="text-xs text-cream/60 mt-0.5">Layar 1 — Input nama tim, pilih slot, & undi posisi bagan</p>
+                                            </div>
+                                            <span className="text-xl text-[#A78BFA] group-hover:translate-x-1 transition-transform">→</span>
+                                        </Link>
+
+                                        <a
+                                            href="/stage/pes"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="group bg-gradient-to-br from-[#0c2a4d]/60 to-[#0a0716] border border-[#38BDF8]/30 hover:border-[#38BDF8] p-5 rounded-2xl transition-all shadow-lg flex items-center justify-between"
+                                        >
+                                            <div>
+                                                <span className="text-[10px] font-mono font-bold text-[#38BDF8] uppercase tracking-wider bg-[#38BDF8]/10 px-2 py-0.5 rounded border border-[#38BDF8]/20">Monitor Eksternal</span>
+                                                <h3 className="font-display text-lg font-bold text-white mt-1.5 group-hover:text-[#38BDF8] transition-colors">🖥️ Panggung Proyektor PES</h3>
+                                                <p className="text-xs text-cream/60 mt-0.5">Layar 2 — Tampilan bagan sinkron real-time untuk penonton</p>
+                                            </div>
+                                            <span className="text-xl text-[#38BDF8] group-hover:translate-x-1 transition-transform">↗</span>
+                                        </a>
                                     </div>
 
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -208,9 +238,31 @@ export default function AdminDashboard() {
                             {/* ============ PES / BADMINTON / TENIS ============ */}
                             {lombaSection && (
                                 <>
-                                    <div className="mb-6">
-                                        <h1 className="font-display text-2xl sm:text-3xl font-bold capitalize">{HTM[lombaSection]?.label || lombaSection}</h1>
-                                        <p className="text-sm text-cream/50 mt-1">{filteredRows.length} pendaftar</p>
+                                    <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
+                                        <div>
+                                            <h1 className="font-display text-2xl sm:text-3xl font-bold capitalize">{HTM[lombaSection]?.label || lombaSection}</h1>
+                                            <p className="text-sm text-cream/50 mt-1">{filteredRows.length} pendaftar</p>
+                                        </div>
+
+                                        {/* Shortcut khusus bila sedang membuka tab PES */}
+                                        {lombaSection === 'pes' && (
+                                            <div className="flex gap-2">
+                                                <Link
+                                                    to="/admin/rolling/pes"
+                                                    className="px-4 py-2 rounded-xl bg-[#A78BFA] text-[#150B2E] font-bold text-xs hover:brightness-105 transition-all shadow-md"
+                                                >
+                                                    🎮 Buka Rolling PES
+                                                </Link>
+                                                <a
+                                                    href="/stage/pes"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="px-4 py-2 rounded-xl border border-[#38BDF8]/40 bg-[#38BDF8]/10 text-[#38BDF8] font-bold text-xs hover:bg-[#38BDF8]/20 transition-all shadow-md"
+                                                >
+                                                    🖥️ Panggung ↗
+                                                </a>
+                                            </div>
+                                        )}
                                     </div>
 
                                     {lombaSection === 'badminton' && stats?.by_lomba?.badminton?.sub_categories && (
@@ -261,7 +313,7 @@ export default function AdminDashboard() {
                                 </>
                             )}
 
-                            {/* ============ KEUANGAN (bendahara / super_admin) ============ */}
+                            {/* ============ KEUANGAN ============ */}
                             {section === 'keuangan' && (
                                 <>
                                     <div className="mb-6">
@@ -443,8 +495,6 @@ export default function AdminDashboard() {
         </RequireAdmin>
     )
 }
-
-// --- Sub-komponen kecil, dipakai Overview & tabel per-lomba ---
 
 function StatusBadge({ status }: { status?: string }) {
     const cls = status === 'verified'
