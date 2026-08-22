@@ -13,6 +13,7 @@ import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboard from './pages/AdminDashboard'
 import RequireAdmin from './components/RequireAdmin'
 import AdminRollingPes from './pages/AdminRollingPes'
+import PublicStagePes from './pages/PublicStagePes'
 
 export default function App() {
   return (
@@ -26,11 +27,9 @@ export default function App() {
               <Route path="/daftar/badminton" element={<DaftarBadminton />} />
               <Route path="/daftar/pes" element={<DaftarPes />} />
               <Route path="/daftar/tenis-meja" element={<DaftarTenisMeja />} />
-
               <Route path="/regulasi/pes" element={<RegulasiPes />} />
-
               <Route path="/admin/login" element={<AdminLoginPage />} />
-
+              <Route path="/stage/pes" element={<PublicStagePes />} />
               <Route
                 path="/admin"
                 element={
