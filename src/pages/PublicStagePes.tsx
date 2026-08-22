@@ -5,10 +5,6 @@ import { createBracket, buildHalfData, BRACKET_OPTIONS } from '../lib/bracketEng
 
 const STORAGE_KEY = 'pes_bracket_live';
 const CHANNEL_NAME = 'pes_tournament_sync';
-
-// Lebar panggung tetap (desktop-only). Tidak ada breakpoint responsif —
-// di layar/window berapa pun ukurannya, tampilan ini tidak berubah susunan,
-// hanya di-scroll kalau viewport lebih sempit dari lebar ini.
 const STAGE_WIDTH = 1600;
 
 type Side = 'left' | 'right';
@@ -33,7 +29,6 @@ interface SyncPayload {
     opponentCallout?: string;
 }
 
-// CSS dipisah jadi konstanta di luar komponen supaya tidak dibuat ulang tiap render.
 const BRACKET_STYLES = `
   .tree-wrap {
     display: grid;
@@ -47,8 +42,6 @@ const BRACKET_STYLES = `
     border-radius: 12px;
     background: rgba(0, 0, 0, 0.18);
   }
-  /* Bagan kanan dicerminkan penuh agar arah "Final"-nya mengarah ke kotak juara di tengah,
-     lalu teks di dalamnya di-flip balik satu kali lagi supaya tetap terbaca normal. */
   .tree-half.right-half {
     transform: scaleX(-1);
   }
@@ -80,7 +73,6 @@ export default function PublicStagePes() {
     const bracketLeftInstance = useRef<any>(null);
     const bracketRightInstance = useRef<any>(null);
 
-    // Menyorot (pulse) match yang baru saja terisi hasil roll.
     const highlightRolledMatches = (positions?: RollPosition[]) => {
         if (!positions?.length) return;
 
@@ -93,7 +85,7 @@ export default function PublicStagePes() {
             if (!matchEl) return;
 
             matchEl.classList.remove('roll-highlight');
-            void (matchEl as HTMLElement).offsetWidth; // restart animasi walau match yang sama
+            void (matchEl as HTMLElement).offsetWidth;
             matchEl.classList.add('roll-highlight');
         });
     };
@@ -101,7 +93,7 @@ export default function PublicStagePes() {
     const drawBracketTree = (data: SyncPayload) => {
         if (!data?.halfSize || !bracketLeftRef.current || !bracketRightRef.current) return;
 
-        const height = `${Math.max(380, data.halfSize * 50)}px`;
+        const height = `${Math.max(380, data.halfSize * 48)}px`;
         bracketLeftRef.current.style.height = height;
         bracketRightRef.current.style.height = height;
         bracketLeftRef.current.innerHTML = '';
@@ -117,16 +109,13 @@ export default function PublicStagePes() {
     };
 
     useEffect(() => {
-        // 1. Muat state terakhir dari localStorage begitu halaman dibuka
         const cached = localStorage.getItem(STORAGE_KEY);
         if (cached) {
             const parsed: SyncPayload = JSON.parse(cached);
             if (parsed.opponentCallout) setCallout(parsed.opponentCallout);
-            // beri jeda 1 tick supaya ref div sudah ter-mount sebelum digambar
             setTimeout(() => drawBracketTree(parsed), 100);
         }
 
-        // 2. Dengarkan update real-time dari ruang kontrol (panel admin) via BroadcastChannel
         const channel = new BroadcastChannel(CHANNEL_NAME);
         channel.onmessage = (event: MessageEvent<SyncPayload>) => {
             if (event.data?.type !== 'SYNC_STATE') return;
@@ -142,8 +131,6 @@ export default function PublicStagePes() {
     }, []);
 
     return (
-        // Wrapper luar hanya untuk menengahkan panggung & menampung scroll kalau
-        // window lebih kecil dari STAGE_WIDTH — bukan untuk bikin layout responsif.
         <div className="min-h-screen w-full overflow-auto bg-[#0a0716] flex justify-center">
             <div
                 className="bg-[#150B2E] text-[#EDE9FE] flex flex-col select-none shrink-0"
@@ -153,42 +140,43 @@ export default function PublicStagePes() {
 
                 <NavbarSimple />
 
-                <div className="flex-1 flex flex-col justify-between p-6">
-                    {/* HEADER STAGE */}
-                    <header className="text-center mb-6">
-                        <div className="font-mono text-xs tracking-[0.3em] text-[#A78BFA] uppercase">
-                            BELOVEsPORT · KNOCK OUT DRAW
+                {/* Kontainer utama rapat dan pas di bawah navbar */}
+                <div className="flex-1 flex flex-col justify-start px-6 pt-24 pb-4">
+                    {/* HEADER STAGE RAPAT */}
+                    <header className="text-center mb-3">
+                        <div className="font-mono text-[10px] tracking-[0.3em] text-[#A78BFA] uppercase">
+                            YouthFunDay · LIVE BRACKET DRAW
                         </div>
-                        <h1 className="text-4xl font-extrabold text-white mt-1">
+                        <h1 className="text-3xl font-extrabold text-white mt-0.5">
                             Bagan Turnamen <span className="text-[#A78BFA]">PES 2026</span>
                         </h1>
-                        <div className="font-mono text-sm text-[#38BDF8] mt-2 min-h-[24px]">
+                        <div className="font-mono text-xs text-[#38BDF8] mt-1 min-h-[18px]">
                             {callout || 'Menunggu pengundian peserta dari ruang kontrol…'}
                         </div>
                     </header>
 
-                    {/* VISUAL BRACKET TREE */}
-                    <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-6 my-auto shadow-2xl backdrop-blur-md">
+                    {/* VISUAL BRACKET TREE LANGSUNG MENEMPEL */}
+                    <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
                         <div className="tree-wrap" id="treeWrap">
                             {/* BAGAN KIRI */}
                             <div className="tree-half" ref={bracketLeftRef} />
 
                             {/* FINAL & JUARA 3 (TENGAH) */}
-                            <div className="w-[140px] flex flex-col items-center justify-center gap-6 px-2">
-                                <div className="w-full text-center border border-dashed border-[#A78BFA]/40 rounded-xl p-3.5 bg-white/5 shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                            <div className="w-[140px] flex flex-col items-center justify-center gap-4 px-2">
+                                <div className="w-full text-center border border-dashed border-[#A78BFA]/40 rounded-xl p-3 bg-white/5 shadow-[0_0_20px_rgba(167,139,250,0.15)]">
                                     <div className="font-mono text-[10px] tracking-wider text-[#A78BFA] uppercase font-bold mb-1">
                                         Grand Final
                                     </div>
-                                    <div className="text-xs text-[#b3aecb] leading-tight">
+                                    <div className="text-[11px] text-[#b3aecb] leading-tight">
                                         Juara Kiri<br />vs<br />Juara Kanan
                                     </div>
                                 </div>
 
-                                <div className="w-full text-center border border-[#38BDF8]/40 rounded-xl p-3 bg-[#38BDF8]/5">
+                                <div className="w-full text-center border border-[#38BDF8]/40 rounded-xl p-2.5 bg-[#38BDF8]/5">
                                     <div className="font-mono text-[10px] tracking-wider text-[#38BDF8] uppercase font-bold mb-1">
                                         Juara 3
                                     </div>
-                                    <div className="text-[11px] text-[#b3aecb] leading-tight">
+                                    <div className="text-[10px] text-[#b3aecb] leading-tight">
                                         Kalah SF Kiri<br />vs<br />Kalah SF Kanan
                                     </div>
                                 </div>
@@ -199,8 +187,8 @@ export default function PublicStagePes() {
                         </div>
                     </div>
 
-                    <footer className="text-center font-mono text-[11px] text-[#b3aecb]/50 mt-4">
-                        YOUTH FUN DAY 2026 · LIVE SYNCHRONIZED BRACKET SEEDING
+                    <footer className="text-center font-mono text-[10px] text-[#b3aecb]/40 mt-3">
+                        YOUTH FUN DAY 2026 · REAL-TIME STAGE SYNC
                     </footer>
                 </div>
             </div>
