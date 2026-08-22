@@ -12,6 +12,7 @@ import RegulasiPes from './pages/RegulasiPes' // <-- 1. Import Halaman Baru
 import AdminLoginPage from './pages/AdminLoginPage'
 import AdminDashboard from './pages/AdminDashboard'
 import RequireAdmin from './components/RequireAdmin'
+import AdminRollingPes from './pages/AdminRollingPes'
 
 export default function App() {
   return (
@@ -35,6 +36,14 @@ export default function App() {
                 element={
                   <RequireAdmin>
                     {(admin) => <AdminDashboard />}
+                  </RequireAdmin>
+                }
+              />
+              <Route
+                path="/admin/rolling/pes"
+                element={
+                  <RequireAdmin>
+                    {() => <AdminRollingPes />}
                   </RequireAdmin>
                 }
               />
