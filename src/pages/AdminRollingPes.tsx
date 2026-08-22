@@ -311,11 +311,11 @@ export default function AdminRollingPes() {
                             type="button"
                             onClick={toggleTicker}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer shadow-lg backdrop-blur-sm border ${showTicker
-                                    ? 'bg-amber-500/20 border-amber-500 text-amber-300'
-                                    : 'bg-white/5 border-white/20 text-cream/60 hover:text-white'
+                                ? 'bg-amber-500/20 border-amber-500 text-amber-300'
+                                : 'bg-white/5 border-white/20 text-cream/60 hover:text-white'
                                 }`}
                         >
-                            📢 {showTicker ? 'Sembunyikan Running Text' : 'Munculkan Running Text'}
+                            📢 {showTicker ? 'Running Text' : 'Munculkan Running Text'}
                         </button>
                         <button
                             onClick={handleOpenStageWindow}
