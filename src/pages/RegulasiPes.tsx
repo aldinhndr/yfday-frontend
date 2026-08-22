@@ -32,9 +32,6 @@ export default function RegulasiPes() {
             <NavbarSimple />
             <div className="min-h-screen bg-night text-cream py-16 px-6">
                 <div className="max-w-3xl mx-auto">
-                    <Link to="/" className="text-sm text-cream/50 hover:text-cream transition-colors">
-                        ← Kembali ke Beranda
-                    </Link>
 
                     <div className="mt-8 mb-10 border-b border-cream/10 pb-8">
                         <p className="uppercase tracking-[0.3em] text-xs text-violet font-semibold mb-2">
@@ -76,15 +73,6 @@ export default function RegulasiPes() {
                                 ))}
                             </ol>
                         </section>
-                    </div>
-
-                    <div className="mt-12 text-center">
-                        <Link
-                            to="/daftar/pes"
-                            className="inline-flex px-8 py-3.5 rounded-full bg-gold text-night font-semibold text-sm hover:scale-105 transition-transform"
-                        >
-                            Lanjut ke Pendaftaran PES →
-                        </Link>
                     </div>
                 </div>
             </div>
