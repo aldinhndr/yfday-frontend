@@ -240,20 +240,23 @@ export default function AdminRollingPes() {
         <div className="min-h-screen bg-[#150B2E] text-[#EDE9FE] font-sans pb-20">
             <NavbarSimple />
 
-            <div className="max-w-[1180px] mx-auto px-5 pt-8">
-                <header className="text-center mb-8 relative">
-                    <button
-                        onClick={handleOpenStageWindow}
-                        className="absolute right-0 top-0 px-4 py-2 bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#38BDF8] rounded-xl text-xs font-bold hover:bg-[#38BDF8]/30 transition-all cursor-pointer"
-                    >
-                        🖥️ Buka Layar 2 (Proyektor) ↗
-                    </button>
+            {/* Ditambahkan padding top pt-28 sm:pt-32 agar turun dan tidak tertutup navbar */}
+            <div className="max-w-[1180px] mx-auto px-5 pt-28 sm:pt-32">
+                <header className="text-center mb-8 relative flex flex-col items-center">
+                    <div className="w-full flex justify-end mb-2 sm:mb-0 sm:absolute sm:right-0 sm:top-0">
+                        <button
+                            onClick={handleOpenStageWindow}
+                            className="px-4 py-2 bg-[#38BDF8]/20 border border-[#38BDF8]/40 text-[#38BDF8] rounded-xl text-xs font-bold hover:bg-[#38BDF8]/30 transition-all cursor-pointer shadow-lg backdrop-blur-sm"
+                        >
+                            🖥️ Buka Layar 2 (Proyektor) ↗
+                        </button>
+                    </div>
                     <div className="font-mono text-xs tracking-[0.28em] text-[#A78BFA] uppercase">YouthFunDay · Controller</div>
-                    <h1 className="text-3xl font-extrabold mt-1">Rolling <span className="text-[#A78BFA]">Peserta</span></h1>
+                    <h1 className="text-3xl sm:text-4xl font-extrabold mt-1">Rolling <span className="text-[#A78BFA]">Peserta</span></h1>
                 </header>
 
                 {isSetup ? (
-                    <section className="max-w-[420px] mx-auto bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-8 text-center">
+                    <section className="max-w-[420px] mx-auto bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-8 text-center mt-6">
                         <label className="block text-xs text-[#b3aecb] uppercase tracking-wider mb-2 font-bold">Total Slot Bagan</label>
                         <input
                             type="number"
@@ -261,10 +264,10 @@ export default function AdminRollingPes() {
                             placeholder="cth. 22"
                             value={totalSlotsInput}
                             onChange={e => setTotalSlotsInput(e.target.value)}
-                            className="w-full p-3.5 rounded-xl border border-[#A78BFA]/20 bg-black/30 text-2xl text-center font-mono font-bold text-white focus:outline-none"
+                            className="w-full p-3.5 rounded-xl border border-[#A78BFA]/20 bg-black/30 text-2xl text-center font-mono font-bold text-white focus:outline-none focus:border-[#A78BFA]"
                         />
                         {setupError && <div className="text-red-400 text-xs mt-2">{setupError}</div>}
-                        <button onClick={handleStartDraw} className="mt-5 w-full p-3.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold">
+                        <button onClick={handleStartDraw} className="mt-5 w-full p-3.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold cursor-pointer hover:brightness-105 transition-all">
                             Mulai Rolling
                         </button>
                     </section>
@@ -280,30 +283,30 @@ export default function AdminRollingPes() {
                                     onChange={e => setTeamName(e.target.value)}
                                     onKeyDown={e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); triggerRoll(); } }}
                                     disabled={isRolling}
-                                    className="flex-1 min-w-[220px] p-3.5 rounded-xl border border-[#A78BFA]/20 bg-black/30 text-white font-semibold focus:outline-none"
+                                    className="flex-1 min-w-[220px] p-3.5 rounded-xl border border-[#A78BFA]/20 bg-black/30 text-white font-semibold focus:outline-none focus:border-[#A78BFA]"
                                 />
                                 <div className="flex border border-[#A78BFA]/20 rounded-xl overflow-hidden">
-                                    <button onClick={() => setSlotCount(1)} className={`px-4 py-3.5 text-xs font-bold ${slotCount === 1 ? 'bg-[#A78BFA] text-[#150B2E]' : 'text-[#b3aecb]'}`}>1 SLOT</button>
-                                    <button onClick={() => setSlotCount(2)} className={`px-4 py-3.5 text-xs font-bold ${slotCount === 2 ? 'bg-[#A78BFA] text-[#150B2E]' : 'text-[#b3aecb]'}`}>2 SLOT</button>
+                                    <button onClick={() => setSlotCount(1)} className={`px-4 py-3.5 text-xs font-bold cursor-pointer transition-colors ${slotCount === 1 ? 'bg-[#A78BFA] text-[#150B2E]' : 'text-[#b3aecb]'}`}>1 SLOT</button>
+                                    <button onClick={() => setSlotCount(2)} className={`px-4 py-3.5 text-xs font-bold cursor-pointer transition-colors ${slotCount === 2 ? 'bg-[#A78BFA] text-[#150B2E]' : 'text-[#b3aecb]'}`}>2 SLOT</button>
                                 </div>
-                                <button onClick={triggerRoll} disabled={isRolling || !teamName.trim()} className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold cursor-pointer">
+                                <button onClick={triggerRoll} disabled={isRolling || !teamName.trim()} className="px-6 py-3.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold cursor-pointer hover:brightness-105 disabled:opacity-50 transition-all">
                                     ROLL
                                 </button>
                             </div>
 
                             <div className="flex justify-center gap-12 py-6 items-center">
-                                <div className={`text-center ${reelLeftActive ? 'opacity-100' : 'opacity-25'}`}>
+                                <div className={`text-center transition-all ${reelLeftActive ? 'opacity-100' : 'opacity-25'}`}>
                                     <span className="font-mono text-xs text-[#38BDF8]">KIRI</span>
                                     <div className={`text-5xl font-mono font-bold text-[#A78BFA] ${settledLeft ? 'animate-pulse' : ''}`}>{numLeft}</div>
                                 </div>
-                                <div className={`text-center ${reelRightActive ? 'opacity-100' : 'opacity-25'}`}>
+                                <div className={`text-center transition-all ${reelRightActive ? 'opacity-100' : 'opacity-25'}`}>
                                     <span className="font-mono text-xs text-[#38BDF8]">KANAN</span>
                                     <div className={`text-5xl font-mono font-bold text-[#A78BFA] ${settledRight ? 'animate-pulse' : ''}`}>{numRight}</div>
                                 </div>
                             </div>
 
                             <div className="text-center font-mono text-xs text-[#b3aecb] uppercase">{statusLine || '\u00A0'}</div>
-                            <div className="text-center font-mono text-xs text-[#A78BFA] mt-1">{opponentCallout || '\u00A0'}</div>
+                            <div className="text-center font-mono text-xs text-[#A78BFA] mt-1 font-bold">{opponentCallout || '\u00A0'}</div>
                         </div>
 
                         {/* STATUS REKAP */}
