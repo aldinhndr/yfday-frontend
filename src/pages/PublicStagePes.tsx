@@ -6,6 +6,11 @@ import { createBracket, buildHalfData, BRACKET_OPTIONS } from '../lib/bracketEng
 const STORAGE_KEY = 'pes_bracket_live';
 const CHANNEL_NAME = 'pes_tournament_sync';
 
+// Lebar panggung tetap (desktop-only). Tidak ada breakpoint responsif —
+// di layar/window berapa pun ukurannya, tampilan ini tidak berubah susunan,
+// hanya di-scroll kalau viewport lebih sempit dari lebar ini.
+const STAGE_WIDTH = 1600;
+
 type Side = 'left' | 'right';
 
 interface SlotData {
@@ -64,9 +69,6 @@ const BRACKET_STYLES = `
   .match-body.roll-highlight {
     animation: matchPulse 1.7s ease-out;
     border-radius: 8px;
-  }
-  @media (max-width: 820px) {
-    .tree-wrap { grid-template-columns: 1fr; }
   }
 `;
 
@@ -140,60 +142,67 @@ export default function PublicStagePes() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#150B2E] text-[#EDE9FE] flex flex-col select-none">
-            <style>{BRACKET_STYLES}</style>
+        // Wrapper luar hanya untuk menengahkan panggung & menampung scroll kalau
+        // window lebih kecil dari STAGE_WIDTH — bukan untuk bikin layout responsif.
+        <div className="min-h-screen w-full overflow-auto bg-[#0a0716] flex justify-center">
+            <div
+                className="bg-[#150B2E] text-[#EDE9FE] flex flex-col select-none shrink-0"
+                style={{ width: STAGE_WIDTH }}
+            >
+                <style>{BRACKET_STYLES}</style>
 
-            <NavbarSimple />
+                <NavbarSimple />
 
-            <div className="flex-1 flex flex-col justify-between p-6">
-                {/* HEADER STAGE */}
-                <header className="text-center mb-6">
-                    <div className="font-mono text-xs tracking-[0.3em] text-[#A78BFA] uppercase">
-                        BELOVEsPORT · KNOCK OUT DRAW
-                    </div>
-                    <h1 className="text-3xl sm:text-4xl font-extrabold text-white mt-1">
-                        Bagan Turnamen <span className="text-[#A78BFA]">PES 2026</span>
-                    </h1>
-                    <div className="font-mono text-sm text-[#38BDF8] mt-2 min-h-[24px]">
-                        {callout || 'Menunggu pengundian peserta dari ruang kontrol…'}
-                    </div>
-                </header>
-
-                {/* VISUAL BRACKET TREE */}
-                <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-6 my-auto shadow-2xl backdrop-blur-md">
-                    <div className="tree-wrap" id="treeWrap">
-                        {/* BAGAN KIRI */}
-                        <div className="tree-half" ref={bracketLeftRef} />
-
-                        {/* FINAL & JUARA 3 (TENGAH) */}
-                        <div className="w-[140px] flex flex-col items-center justify-center gap-6 px-2">
-                            <div className="w-full text-center border border-dashed border-[#A78BFA]/40 rounded-xl p-3.5 bg-white/5 shadow-[0_0_20px_rgba(167,139,250,0.15)]">
-                                <div className="font-mono text-[10px] tracking-wider text-[#A78BFA] uppercase font-bold mb-1">
-                                    Grand Final
-                                </div>
-                                <div className="text-xs text-[#b3aecb] leading-tight">
-                                    Juara Kiri<br />vs<br />Juara Kanan
-                                </div>
-                            </div>
-
-                            <div className="w-full text-center border border-[#38BDF8]/40 rounded-xl p-3 bg-[#38BDF8]/5">
-                                <div className="font-mono text-[10px] tracking-wider text-[#38BDF8] uppercase font-bold mb-1">
-                                    Juara 3
-                                </div>
-                                <div className="text-[11px] text-[#b3aecb] leading-tight">
-                                    Kalah SF Kiri<br />vs<br />Kalah SF Kanan
-                                </div>
-                            </div>
+                <div className="flex-1 flex flex-col justify-between p-6">
+                    {/* HEADER STAGE */}
+                    <header className="text-center mb-6">
+                        <div className="font-mono text-xs tracking-[0.3em] text-[#A78BFA] uppercase">
+                            BELOVEsPORT · KNOCK OUT DRAW
                         </div>
+                        <h1 className="text-4xl font-extrabold text-white mt-1">
+                            Bagan Turnamen <span className="text-[#A78BFA]">PES 2026</span>
+                        </h1>
+                        <div className="font-mono text-sm text-[#38BDF8] mt-2 min-h-[24px]">
+                            {callout || 'Menunggu pengundian peserta dari ruang kontrol…'}
+                        </div>
+                    </header>
 
-                        {/* BAGAN KANAN (DICERMINKAN) */}
-                        <div className="tree-half right-half" ref={bracketRightRef} />
+                    {/* VISUAL BRACKET TREE */}
+                    <div className="bg-white/5 border border-[#A78BFA]/20 rounded-2xl p-6 my-auto shadow-2xl backdrop-blur-md">
+                        <div className="tree-wrap" id="treeWrap">
+                            {/* BAGAN KIRI */}
+                            <div className="tree-half" ref={bracketLeftRef} />
+
+                            {/* FINAL & JUARA 3 (TENGAH) */}
+                            <div className="w-[140px] flex flex-col items-center justify-center gap-6 px-2">
+                                <div className="w-full text-center border border-dashed border-[#A78BFA]/40 rounded-xl p-3.5 bg-white/5 shadow-[0_0_20px_rgba(167,139,250,0.15)]">
+                                    <div className="font-mono text-[10px] tracking-wider text-[#A78BFA] uppercase font-bold mb-1">
+                                        Grand Final
+                                    </div>
+                                    <div className="text-xs text-[#b3aecb] leading-tight">
+                                        Juara Kiri<br />vs<br />Juara Kanan
+                                    </div>
+                                </div>
+
+                                <div className="w-full text-center border border-[#38BDF8]/40 rounded-xl p-3 bg-[#38BDF8]/5">
+                                    <div className="font-mono text-[10px] tracking-wider text-[#38BDF8] uppercase font-bold mb-1">
+                                        Juara 3
+                                    </div>
+                                    <div className="text-[11px] text-[#b3aecb] leading-tight">
+                                        Kalah SF Kiri<br />vs<br />Kalah SF Kanan
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* BAGAN KANAN (DICERMINKAN) */}
+                            <div className="tree-half right-half" ref={bracketRightRef} />
+                        </div>
                     </div>
-                </div>
 
-                <footer className="text-center font-mono text-[11px] text-[#b3aecb]/50 mt-4">
-                    YOUTH FUN DAY 2026 · LIVE SYNCHRONIZED BRACKET SEEDING
-                </footer>
+                    <footer className="text-center font-mono text-[11px] text-[#b3aecb]/50 mt-4">
+                        YOUTH FUN DAY 2026 · LIVE SYNCHRONIZED BRACKET SEEDING
+                    </footer>
+                </div>
             </div>
         </div>
     );
