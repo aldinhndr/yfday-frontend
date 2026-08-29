@@ -1,285 +1,428 @@
-// src/pages/admin/BadmintonDepositSection.tsx
-import React, { useState } from 'react'
+// src/pages/BadmintonDeposit.tsx
+import { useState } from 'react'
+
+export interface CockUsageLog {
+    id: string | number
+    match_id: string
+    set_number: number
+    opponent_name: string
+    shuttlecock_qty: number
+    deduction_amount: number
+    created_at: string
+}
+
+export interface DepositHistoryLog {
+    id: string | number
+    amount: number
+    notes?: string
+    created_at: string
+}
 
 export interface BadmintonTeamSummary {
     team_id: string
     team_name: string
-    category: string
     player_1_name: string
     player_2_name: string
-    phone_number: string
+    phone_number?: string
     total_deposit: number
-    total_refunded: number
     total_cock_used: number
-    total_cock_expense: number
+    total_cost: number
     remaining_deposit: number
+    usage_logs?: CockUsageLog[]
+    deposit_logs?: DepositHistoryLog[]
 }
 
-interface Props {
-    teams: BadmintonTeamSummary[]
-    onRefresh: () => void
+export interface MatchCockSummary {
+    match_id: string
+    round: string
+    team_a_name: string
+    team_b_name: string
+    total_cocks: number
+    total_cost: number
+}
+
+interface BadmintonDepositProps {
+    teams?: BadmintonTeamSummary[]
+    matchSummaries?: MatchCockSummary[]
+    onRefresh?: () => void | Promise<void>
     token?: string
 }
 
-const formatRupiah = (n: number) => `Rp${n.toLocaleString('id-ID')}`
-
-export default function BadmintonDepositSection({ teams, onRefresh, token }: Props) {
-    const [showAddTeamModal, setShowAddTeamModal] = useState(false)
-    const [teamName, setTeamName] = useState('')
-    const [category, setCategory] = useState('ganda_putra')
-    const [player1, setPlayer1] = useState('')
-    const [player2, setPlayer2] = useState('')
-    const [phone, setPhone] = useState('')
-    const [initialDeposit, setInitialDeposit] = useState('50000')
-
+export default function BadmintonDeposit({
+    teams = [],
+    matchSummaries = [],
+    onRefresh,
+    token
+}: BadmintonDepositProps) {
     const [selectedTeam, setSelectedTeam] = useState<BadmintonTeamSummary | null>(null)
-    const [actionType, setActionType] = useState<'topup' | 'refund'>('topup')
-    const [nominal, setNominal] = useState('')
-    const [depositNote, setDepositNote] = useState('')
-    const [submitting, setSubmitting] = useState(false)
+    const [topUpAmount, setTopUpAmount] = useState<number>(50000)
+    const [topUpNotes, setTopUpNotes] = useState<string>('')
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+    const [activeModalTab, setActiveModalTab] = useState<'topup' | 'usage_history' | 'deposit_history'>('topup')
 
-    const handleCreateTeam = async (e: React.FormEvent) => {
+    const totalDepositAll = teams.reduce((acc, t) => acc + (t.total_deposit || 0), 0)
+    const totalCostAll = teams.reduce((acc, t) => acc + (t.total_cost || 0), 0)
+    const totalRemainingAll = teams.reduce((acc, t) => acc + (t.remaining_deposit || 0), 0)
+    const totalCocksAll = teams.reduce((acc, t) => acc + (t.total_cock_used || 0), 0)
+
+    const handleOpenTeamDetail = (team: BadmintonTeamSummary) => {
+        setSelectedTeam(team)
+        setActiveModalTab('topup')
+        setTopUpAmount(50000)
+        setTopUpNotes('')
+    }
+
+    const handleTopUpSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!token) return
-        setSubmitting(true)
+        if (!selectedTeam) return
+        if (topUpAmount <= 0) {
+            alert('Nominal deposit harus lebih besar dari 0')
+            return
+        }
+
+        if (!window.confirm(`Konfirmasi Top-up Deposit sebesar Rp${topUpAmount.toLocaleString('id-ID')} untuk ${selectedTeam.team_name}?`)) {
+            return
+        }
+
+        setIsSubmitting(true)
         try {
-            const apiBase = import.meta.env.VITE_API_URL
-            const res = await fetch(`${apiBase}/api/badminton/teams`, {
+            const apiBase = import.meta.env.VITE_API_URL || ''
+            const res = await fetch(`${apiBase}/api/badminton/teams/${selectedTeam.team_id}/deposit`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Authorization: `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    team_name: teamName,
-                    category,
-                    player_1_name: player1,
-                    player_2_name: player2,
-                    phone_number: phone,
-                    initial_deposit: parseFloat(initialDeposit) || 0
+                    amount: topUpAmount,
+                    notes: topUpNotes || 'Top up via Admin'
                 })
             })
-            if (res.ok) {
-                onRefresh()
-                setShowAddTeamModal(false)
-                setTeamName('')
-                setPlayer1('')
-                setPlayer2('')
-                setPhone('')
-                setInitialDeposit('50000')
-            } else {
-                const err = await res.json()
-                alert(err.detail || 'Gagal mendaftarkan tim')
-            }
-        } catch {
-            alert('Terjadi kesalahan jaringan')
+
+            if (!res.ok) throw new Error('Gagal memproses deposit')
+
+            alert('✅ Deposit berhasil ditambahkan!')
+            setSelectedTeam(null)
+            if (onRefresh) await onRefresh()
+        } catch (err: any) {
+            alert(err.message || 'Terjadi kesalahan sistem')
         } finally {
-            setSubmitting(false)
-        }
-    }
-
-    const handleProcessDeposit = async () => {
-        if (!selectedTeam || !nominal || !token) return
-        const amount = parseFloat(nominal)
-        const apiBase = import.meta.env.VITE_API_URL
-        setSubmitting(true)
-
-        try {
-            const endpoint = actionType === 'topup'
-                ? `${apiBase}/api/badminton/deposits`
-                : `${apiBase}/api/badminton/deposits/refund`
-
-            const payload = actionType === 'topup'
-                ? { team_id: selectedTeam.team_id, amount, type: 'deposit_masuk', admin_note: depositNote, created_by: 'Admin' }
-                : { team_id: selectedTeam.team_id, amount, admin_note: depositNote }
-
-            const res = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
-
-            if (res.ok) {
-                onRefresh()
-                setSelectedTeam(null)
-                setNominal('')
-                setDepositNote('')
-            } else {
-                const err = await res.json()
-                alert(err.detail || 'Gagal memproses deposit/refund')
-            }
-        } catch {
-            alert('Terjadi kesalahan jaringan')
-        } finally {
-            setSubmitting(false)
+            setIsSubmitting(false)
         }
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-wrap justify-between items-center gap-4">
-                <div>
-                    <h1 className="font-display text-2xl sm:text-3xl font-bold">Meja Deposit &amp; Shuttlecock</h1>
-                    <p className="text-sm text-cream/50 mt-1">
-                        Pusat setoran awal, pantau saldo sisa real-time, top-up, dan pencairan refund dana tim.
-                    </p>
+        <div className="space-y-8">
+            {/* STATS ROW */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-[11px] font-mono uppercase text-slate-400">Total Deposit Masuk</div>
+                    <div className="text-xl sm:text-2xl font-mono font-black text-emerald-400 mt-1">
+                        Rp{totalDepositAll.toLocaleString('id-ID')}
+                    </div>
                 </div>
-                <div className="flex gap-2">
-                    <button
-                        onClick={onRefresh}
-                        className="px-4 py-2.5 rounded-xl border border-cream/20 bg-night2 text-xs font-mono text-[#38BDF8] hover:bg-cream/5 transition-all cursor-pointer"
-                    >
-                        ↻ Refresh Saldo
-                    </button>
-                    <button
-                        onClick={() => setShowAddTeamModal(true)}
-                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold text-xs hover:brightness-105 transition-all shadow-md cursor-pointer"
-                    >
-                        + Daftarkan Tim &amp; Deposit Awal
-                    </button>
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-[11px] font-mono uppercase text-slate-400">Total Biaya Kok</div>
+                    <div className="text-xl sm:text-2xl font-mono font-black text-amber-400 mt-1">
+                        Rp{totalCostAll.toLocaleString('id-ID')}
+                    </div>
+                    <div className="text-[10px] font-mono text-slate-500 mt-0.5">({totalCocksAll} Kok Terpakai)</div>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-[11px] font-mono uppercase text-slate-400">Sisa Saldo Semua Tim</div>
+                    <div className="text-xl sm:text-2xl font-mono font-black text-amber-300 mt-1">
+                        Rp{totalRemainingAll.toLocaleString('id-ID')}
+                    </div>
+                </div>
+                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <div className="text-[11px] font-mono uppercase text-slate-400">Total Partisipan</div>
+                    <div className="text-xl sm:text-2xl font-mono font-black text-white mt-1">
+                        {teams.length} <span className="text-xs font-normal text-slate-400">Tim</span>
+                    </div>
                 </div>
             </div>
 
-            {/* TABEL MASTER DEPOSIT */}
-            <div className="bg-night2 border border-[#A78BFA]/30 rounded-2xl p-6 shadow-xl">
+            {/* RINGKASAN KOK PER MATCH */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                <div className="mb-4">
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>🏸</span> Rekap Penggunaan Kok Per Match
+                    </h2>
+                    <p className="text-xs text-slate-400">Pencatatan real-time jumlah shuttlecock dari wasit.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                    {matchSummaries.length > 0 ? (
+                        matchSummaries.map((m) => (
+                            <div key={m.match_id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex flex-col justify-between">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-mono text-xs font-black bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded">
+                                        {m.match_id}
+                                    </span>
+                                    <span className="text-[10px] font-mono text-emerald-400 font-bold">{m.round}</span>
+                                </div>
+                                <div className="my-2">
+                                    <div className="text-[11px] text-slate-200 font-medium truncate">{m.team_a_name}</div>
+                                    <div className="text-[9px] text-slate-500 uppercase">vs</div>
+                                    <div className="text-[11px] text-slate-200 font-medium truncate">{m.team_b_name}</div>
+                                </div>
+                                <div className="pt-2 border-t border-slate-800 flex justify-between items-center text-xs font-mono">
+                                    <span className="text-slate-400">Kok: <b className="text-white">{m.total_cocks}</b></span>
+                                    <span className="text-amber-400 font-bold">Rp{m.total_cost.toLocaleString('id-ID')}</span>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="col-span-full py-6 text-center text-xs font-mono text-slate-500">
+                            Belum ada aktivitas match yang tercatat.
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* TABEL TIM */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-lg font-bold text-white">Daftar Tim &amp; Saldo Deposit</h2>
+                        <p className="text-xs text-slate-400">Klik baris tim untuk melihat log wasit atau menambah saldo.</p>
+                    </div>
+                    {onRefresh && (
+                        <button
+                            onClick={() => onRefresh()}
+                            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-mono text-slate-200 cursor-pointer"
+                        >
+                            🔄 Refresh Data
+                        </button>
+                    )}
+                </div>
+
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr className="border-b border-cream/10 text-cream/50 uppercase font-mono">
-                                <th className="py-2.5 px-3">Nama Tim</th>
-                                <th className="py-2.5 px-3">Kategori</th>
-                                <th className="py-2.5 px-3">Pemain</th>
-                                <th className="py-2.5 px-3">Deposit Masuk</th>
-                                <th className="py-2.5 px-3 text-center">Kok Tambahan</th>
-                                <th className="py-2.5 px-3">Biaya Kok (@5K)</th>
-                                <th className="py-2.5 px-3 font-bold text-gold">Sisa Saldo</th>
-                                <th className="py-2.5 px-3 text-center">Aksi Meja</th>
+                    <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-950 text-slate-400 font-mono uppercase text-[10px] border-b border-slate-800">
+                            <tr>
+                                <th className="py-3 px-4">Nama Tim &amp; Pemain</th>
+                                <th className="py-3 px-4">Total Deposit</th>
+                                <th className="py-3 px-4">Kok Terpakai</th>
+                                <th className="py-3 px-4">Total Biaya</th>
+                                <th className="py-3 px-4">Sisa Saldo</th>
+                                <th className="py-3 px-4 text-center">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-cream/5">
+                        <tbody className="divide-y divide-slate-800/60">
                             {teams.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} className="py-8 text-center text-cream/40">
-                                        Belum ada tim terdaftar. Klik tombol "+ Daftarkan Tim &amp; Deposit Awal".
+                                    <td colSpan={6} className="py-8 text-center text-slate-500 font-mono text-xs">
+                                        Belum ada data tim.
                                     </td>
                                 </tr>
                             ) : (
-                                teams.map((t) => (
-                                    <tr key={t.team_id} className="hover:bg-cream/5 transition-colors">
-                                        <td className="py-3 px-3 font-bold text-cream">{t.team_name}</td>
-                                        <td className="py-3 px-3 uppercase text-[10px] text-[#38BDF8] font-semibold">
-                                            {t.category.replace('_', ' ')}
-                                        </td>
-                                        <td className="py-3 px-3 text-cream/70">{t.player_1_name} &amp; {t.player_2_name}</td>
-                                        <td className="py-3 px-3 font-mono">{formatRupiah(t.total_deposit)}</td>
-                                        <td className="py-3 px-3 text-center font-mono font-bold text-[#A78BFA]">{t.total_cock_used} Kok</td>
-                                        <td className="py-3 px-3 font-mono text-red-400">{formatRupiah(t.total_cock_expense)}</td>
-                                        <td className="py-3 px-3 font-mono font-bold text-court text-sm">
-                                            {formatRupiah(t.remaining_deposit)}
-                                        </td>
-                                        <td className="py-3 px-3 text-center">
-                                            <div className="flex gap-1.5 justify-center">
+                                teams.map((t) => {
+                                    const isLow = t.remaining_deposit < 20000
+                                    return (
+                                        <tr
+                                            key={t.team_id}
+                                            onClick={() => handleOpenTeamDetail(t)}
+                                            className="hover:bg-slate-800/40 cursor-pointer transition-colors"
+                                        >
+                                            <td className="py-3 px-4">
+                                                <div className="font-bold text-white text-sm">{t.team_name}</div>
+                                                <div className="text-[11px] text-slate-400">{t.player_1_name} &amp; {t.player_2_name}</div>
+                                            </td>
+                                            <td className="py-3 px-4 font-mono text-slate-300">
+                                                Rp{t.total_deposit.toLocaleString('id-ID')}
+                                            </td>
+                                            <td className="py-3 px-4 font-mono font-bold text-white">
+                                                {t.total_cock_used} Kok
+                                            </td>
+                                            <td className="py-3 px-4 font-mono text-amber-400">
+                                                Rp{t.total_cost.toLocaleString('id-ID')}
+                                            </td>
+                                            <td className="py-3 px-4 font-mono">
+                                                <span className={`px-2 py-1 rounded font-bold ${
+                                                    isLow ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400'
+                                                }`}>
+                                                    Rp{t.remaining_deposit.toLocaleString('id-ID')}
+                                                </span>
+                                            </td>
+                                            <td className="py-3 px-4 text-center">
                                                 <button
-                                                    onClick={() => { setSelectedTeam(t); setActionType('topup'); setNominal(''); }}
-                                                    className="px-2.5 py-1 rounded-lg bg-court/20 text-court font-bold text-[10px] hover:bg-court/30 cursor-pointer"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation()
+                                                        handleOpenTeamDetail(t)
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-lg bg-amber-400/10 hover:bg-amber-400/20 border border-amber-400/30 text-amber-300 font-bold text-[11px] cursor-pointer"
                                                 >
-                                                    + Topup
+                                                    Lihat &amp; Top-up
                                                 </button>
-                                                <button
-                                                    onClick={() => { setSelectedTeam(t); setActionType('refund'); setNominal(String(Math.max(0, t.remaining_deposit))); }}
-                                                    className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-bold text-[10px] hover:bg-amber-500/30 cursor-pointer"
-                                                >
-                                                    ↩ Refund
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                        </tr>
+                                    )
+                                })
                             )}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* MODAL REGISTRASI TIM & DEPOSIT */}
-            {showAddTeamModal && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <form onSubmit={handleCreateTeam} className="bg-night2 border border-[#A78BFA]/30 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-                        <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                            <h3 className="font-bold text-base text-white">Daftarkan Tim &amp; Deposit Awal</h3>
-                            <button type="button" onClick={() => setShowAddTeamModal(false)} className="text-white/50 text-xl font-bold cursor-pointer">✕</button>
-                        </div>
-                        <div>
-                            <label className="text-xs text-cream/70 font-bold block mb-1">Nama Tim / Pasangan</label>
-                            <input required type="text" value={teamName} onChange={e => setTeamName(e.target.value)} placeholder="Contoh: PB Perkasa" className="w-full p-3 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none focus:border-gold" />
-                        </div>
-                        <div>
-                            <label className="text-xs text-cream/70 font-bold block mb-1">Kategori</label>
-                            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-3 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none focus:border-gold">
-                                <option value="ganda_putra">Ganda Putra</option>
-                                <option value="ganda_putri">Ganda Putri</option>
-                                <option value="campuran">Ganda Campuran</option>
-                            </select>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div>
-                                <label className="text-xs text-cream/70 font-bold block mb-1">Pemain 1</label>
-                                <input required type="text" value={player1} onChange={e => setPlayer1(e.target.value)} className="w-full p-3 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none focus:border-gold" />
-                            </div>
-                            <div>
-                                <label className="text-xs text-cream/70 font-bold block mb-1">Pemain 2</label>
-                                <input required type="text" value={player2} onChange={e => setPlayer2(e.target.value)} className="w-full p-3 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none focus:border-gold" />
-                            </div>
-                        </div>
-                        <div>
-                            <label className="text-xs text-cream/70 font-bold block mb-1">No HP / WhatsApp</label>
-                            <input type="text" value={phone} onChange={e => setPhone(e.target.value)} placeholder="08..." className="w-full p-3 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none focus:border-gold" />
-                        </div>
-                        <div>
-                            <label className="text-xs text-gold font-bold block mb-1">Setoran Deposit Awal (Rp)</label>
-                            <input required type="number" step="5000" value={initialDeposit} onChange={e => setInitialDeposit(e.target.value)} className="w-full p-3 rounded-xl bg-night border border-gold/40 text-gold font-mono font-bold text-base outline-none focus:border-gold" />
-                        </div>
-                        <button disabled={submitting} type="submit" className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#A78BFA] to-[#38BDF8] text-[#150B2E] font-bold text-xs cursor-pointer hover:brightness-105 disabled:opacity-50">
-                            {submitting ? 'Menyimpan...' : 'Simpan Tim & Deposit'}
-                        </button>
-                    </form>
-                </div>
-            )}
-
-            {/* MODAL TOPUP / REFUND */}
+            {/* MODAL DETAIL TIM */}
             {selectedTeam && (
                 <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <div className="bg-night2 border border-[#A78BFA]/30 rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-                        <div className="flex justify-between items-center border-b border-cream/10 pb-3">
-                            <h3 className="font-bold text-base text-white">
-                                {actionType === 'topup' ? 'Topup Saldo Deposit' : 'Pencairan / Refund Sisa Saldo'}
-                            </h3>
-                            <button onClick={() => setSelectedTeam(null)} className="text-white/50 text-xl font-bold cursor-pointer">✕</button>
+                    <div className="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl">
+                        <div className="p-5 border-b border-slate-800 bg-slate-950 flex justify-between items-center">
+                            <div>
+                                <span className="font-mono text-[10px] text-amber-400 uppercase tracking-wider font-bold">Rincian Finansial Tim</span>
+                                <h3 className="text-xl font-bold text-white">{selectedTeam.team_name}</h3>
+                                <p className="text-xs text-slate-400">{selectedTeam.player_1_name} &amp; {selectedTeam.player_2_name}</p>
+                            </div>
+                            <button
+                                onClick={() => setSelectedTeam(null)}
+                                className="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center justify-center font-mono cursor-pointer"
+                            >
+                                ✕
+                            </button>
                         </div>
-                        <div className="text-xs text-cream/70">
-                            Tim: <b className="text-white">{selectedTeam.team_name}</b><br />
-                            Sisa Saldo Saat Ini: <b className="text-court font-mono">{formatRupiah(selectedTeam.remaining_deposit)}</b>
+
+                        <div className="grid grid-cols-3 gap-2 p-4 bg-slate-950/60 border-b border-slate-800 text-center font-mono">
+                            <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                                <div className="text-[10px] text-slate-400">Total Deposit</div>
+                                <div className="text-sm font-bold text-emerald-400">Rp{selectedTeam.total_deposit.toLocaleString('id-ID')}</div>
+                            </div>
+                            <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                                <div className="text-[10px] text-slate-400">Biaya Kok ({selectedTeam.total_cock_used})</div>
+                                <div className="text-sm font-bold text-amber-400">Rp{selectedTeam.total_cost.toLocaleString('id-ID')}</div>
+                            </div>
+                            <div className="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                                <div className="text-[10px] text-slate-400">Sisa Saldo</div>
+                                <div className="text-sm font-bold text-amber-300">Rp{selectedTeam.remaining_deposit.toLocaleString('id-ID')}</div>
+                            </div>
                         </div>
-                        <div>
-                            <label className="text-xs text-gold font-bold block mb-1">Nominal (Rp)</label>
-                            <input type="number" step="5000" value={nominal} onChange={e => setNominal(e.target.value)} className="w-full p-3 rounded-xl bg-night border border-gold/40 text-gold font-mono font-bold text-base outline-none" />
+
+                        <div className="flex border-b border-slate-800 bg-slate-950 text-xs font-mono">
+                            <button
+                                onClick={() => setActiveModalTab('topup')}
+                                className={`flex-1 py-3 border-b-2 font-bold cursor-pointer ${
+                                    activeModalTab === 'topup' ? 'border-amber-400 text-amber-400 bg-amber-400/5' : 'border-transparent text-slate-400'
+                                }`}
+                            >
+                                ➕ Top-up Saldo
+                            </button>
+                            <button
+                                onClick={() => setActiveModalTab('usage_history')}
+                                className={`flex-1 py-3 border-b-2 font-bold cursor-pointer ${
+                                    activeModalTab === 'usage_history' ? 'border-amber-400 text-amber-400 bg-amber-400/5' : 'border-transparent text-slate-400'
+                                }`}
+                            >
+                                🏸 Log Wasit
+                            </button>
+                            <button
+                                onClick={() => setActiveModalTab('deposit_history')}
+                                className={`flex-1 py-3 border-b-2 font-bold cursor-pointer ${
+                                    activeModalTab === 'deposit_history' ? 'border-amber-400 text-amber-400 bg-amber-400/5' : 'border-transparent text-slate-400'
+                                }`}
+                            >
+                                📜 Riwayat Deposit
+                            </button>
                         </div>
-                        <div>
-                            <label className="text-xs text-cream/70 font-bold block mb-1">Catatan Admin</label>
-                            <input type="text" value={depositNote} onChange={e => setDepositNote(e.target.value)} placeholder="Contoh: Sisa deposit dikembalikan tunai" className="w-full p-2.5 rounded-xl bg-night border border-cream/15 text-white text-xs outline-none" />
+
+                        <div className="p-5 max-h-[60vh] overflow-y-auto">
+                            {activeModalTab === 'topup' && (
+                                <form onSubmit={handleTopUpSubmit} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-mono text-slate-300 block mb-1 font-bold">Nominal Top-up (Rp)</label>
+                                        <input
+                                            type="number"
+                                            step="5000"
+                                            min="10000"
+                                            value={topUpAmount}
+                                            onChange={(e) => setTopUpAmount(Number(e.target.value))}
+                                            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-lg font-mono font-bold text-amber-300 focus:border-amber-400 outline-none"
+                                            required
+                                        />
+                                        <div className="flex gap-2 mt-2">
+                                            {[20000, 50000, 100000].map((amt) => (
+                                                <button
+                                                    key={amt}
+                                                    type="button"
+                                                    onClick={() => setTopUpAmount(amt)}
+                                                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-[11px] font-mono text-slate-300 cursor-pointer"
+                                                >
+                                                    +Rp{amt.toLocaleString('id-ID')}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="text-xs font-mono text-slate-300 block mb-1">Keterangan</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Contoh: Tunai / Transfer"
+                                            value={topUpNotes}
+                                            onChange={(e) => setTopUpNotes(e.target.value)}
+                                            className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs text-white focus:border-amber-400 outline-none"
+                                        />
+                                    </div>
+
+                                    <button
+                                        type="submit"
+                                        disabled={isSubmitting}
+                                        className="w-full py-3.5 bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-bold rounded-xl font-mono text-sm hover:brightness-110 active:scale-95 transition-all shadow-lg cursor-pointer disabled:opacity-50"
+                                    >
+                                        {isSubmitting ? 'Memproses...' : 'Simpan & Tambah Deposit'}
+                                    </button>
+                                </form>
+                            )}
+
+                            {activeModalTab === 'usage_history' && (
+                                <div className="space-y-2">
+                                    {selectedTeam.usage_logs && selectedTeam.usage_logs.length > 0 ? (
+                                        selectedTeam.usage_logs.map((log) => (
+                                            <div key={log.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                                                <div>
+                                                    <div className="font-bold text-white">
+                                                        Match <span className="text-amber-300 font-mono">{log.match_id}</span> — Set {log.set_number}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-400">
+                                                        Lawan: {log.opponent_name || 'N/A'} • {log.created_at}
+                                                    </div>
+                                                </div>
+                                                <div className="text-right font-mono">
+                                                    <div className="text-red-400 font-bold">-Rp{log.deduction_amount.toLocaleString('id-ID')}</div>
+                                                    <div className="text-[10px] text-slate-500">({log.shuttlecock_qty} Kok / Split)</div>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-xs font-mono text-slate-500">
+                                            Belum ada catatan pemotongan kok dari wasit untuk tim ini.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {activeModalTab === 'deposit_history' && (
+                                <div className="space-y-2">
+                                    {selectedTeam.deposit_logs && selectedTeam.deposit_logs.length > 0 ? (
+                                        selectedTeam.deposit_logs.map((d) => (
+                                            <div key={d.id} className="bg-slate-950 border border-slate-800 p-3 rounded-xl flex justify-between items-center text-xs">
+                                                <div>
+                                                    <div className="font-bold text-emerald-400 font-mono">+Rp{d.amount.toLocaleString('id-ID')}</div>
+                                                    <div className="text-[11px] text-slate-400">{d.notes || 'Top up deposit'}</div>
+                                                </div>
+                                                <div className="text-[10px] font-mono text-slate-500">
+                                                    {d.created_at}
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-xs font-mono text-slate-500">
+                                            Belum ada riwayat top-up tersimpan.
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        <button
-                            disabled={submitting}
-                            onClick={handleProcessDeposit}
-                            className={`w-full py-3 rounded-xl font-bold text-xs cursor-pointer transition-all disabled:opacity-50 ${
-                                actionType === 'topup' ? 'bg-court text-night hover:brightness-105' : 'bg-amber-500 text-night hover:brightness-105'
-                            }`}
-                        >
-                            {submitting ? 'Memproses...' : (actionType === 'topup' ? 'Konfirmasi Topup' : 'Konfirmasi Refund')}
-                        </button>
                     </div>
                 </div>
             )}
