@@ -245,10 +245,11 @@ export default function AdminDashboard() {
                             {/* 2. MEJA DEPOSIT & KOK BADMINTON */}
                             {section === 'badminton_deposit' && (
                                 <BadmintonDepositSection
-                                    teams={badmintonTeams}
-                                    onRefresh={fetchData}
-                                    token={session?.access_token}
-                                />
+    teams={badmintonTeams}
+    matchSummaries={matchSummaries} // Array hasil agregat pemakaian kok per match
+    onRefresh={fetchBadmintonData}
+    token={token}
+/>
                             )}
 
                             {/* 3. WASIT BADMINTON (SCORER & KOK) */}
