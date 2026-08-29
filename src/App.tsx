@@ -33,7 +33,7 @@ export default function App() {
 
               {/* === RUTE OPERASIONAL TURNAMEN === */}
               <Route path="/stage/pes" element={<PublicStagePes />} />
-              <Route path="/wasit/badminton" element={<WasitBadmintonScore />} />
+              <Route path="/wasit/badminton" element={<WasitBadmintonSkor />} />
 
               {/* === RUTE KHUSUS ADMIN === */}
               <Route
