@@ -14,7 +14,8 @@ import AdminDashboard from './pages/AdminDashboard'
 import RequireAdmin from './components/RequireAdmin'
 import AdminRollingPes from './pages/AdminRollingPes'
 import PublicStagePes from './pages/PublicStagePes'
-import WasitBadmintonScore from './pages/WasitBadmintonSkor'
+// 1. Samakan nama import menjadi WasitBadmintonSkor
+import WasitBadmintonSkor from './pages/WasitBadmintonSkor'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
 
               {/* === RUTE OPERASIONAL TURNAMEN === */}
               <Route path="/stage/pes" element={<PublicStagePes />} />
+              {/* 2. Gunakan tag yang sama persis */}
               <Route path="/wasit/badminton" element={<WasitBadmintonSkor />} />
 
               {/* === RUTE KHUSUS ADMIN === */}
