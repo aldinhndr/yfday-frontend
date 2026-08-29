@@ -1,12 +1,21 @@
+// src/components/admin/AdminSidebar.tsx
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import ThemeToggle from '../ThemeToggle'
 import {
     LayoutDashboard, Gamepad2, Trophy, CircleDot, Wallet,
-    LogOut, Menu, X,
+    LogOut, Menu, X, Swords, Coins
 } from 'lucide-react'
 
-export type AdminSection = 'overview' | 'pes' | 'badminton' | 'tenis' | 'keuangan'
+// Export tipe section yang diperluas
+export type AdminSection = 
+    | 'overview' 
+    | 'pes' 
+    | 'badminton' 
+    | 'badminton_deposit' 
+    | 'wasit_badminton' 
+    | 'tenis' 
+    | 'keuangan'
 
 interface NavItem {
     key: AdminSection
@@ -16,11 +25,48 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-    { key: 'overview', label: 'Ringkasan', icon: LayoutDashboard, roles: ['super_admin', 'bendahara', 'admin_pes', 'admin_badminton', 'admin_tenis_meja'] },
-    { key: 'pes', label: 'PES', icon: Gamepad2, roles: ['super_admin', 'bendahara', 'admin_pes'] },
-    { key: 'badminton', label: 'Badminton', icon: Trophy, roles: ['super_admin', 'bendahara', 'admin_badminton'] },
-    { key: 'tenis', label: 'Tenis Meja', icon: CircleDot, roles: ['super_admin', 'bendahara', 'admin_tenis_meja'] },
-    { key: 'keuangan', label: 'Keuangan', icon: Wallet, roles: ['super_admin', 'bendahara'] },
+    { 
+        key: 'overview', 
+        label: 'Ringkasan', 
+        icon: LayoutDashboard, 
+        roles: ['super_admin', 'bendahara', 'admin_pes', 'admin_badminton', 'admin_tenis_meja', 'wasit'] 
+    },
+    { 
+        key: 'pes', 
+        label: 'PES', 
+        icon: Gamepad2, 
+        roles: ['super_admin', 'bendahara', 'admin_pes'] 
+    },
+    { 
+        key: 'badminton', 
+        label: 'Badminton (Pendaftar)', 
+        icon: Trophy, 
+        roles: ['super_admin', 'bendahara', 'admin_badminton'] 
+    },
+    { 
+        key: 'badminton_deposit', 
+        label: 'Meja Deposit & Kok', 
+        icon: Coins, 
+        roles: ['super_admin', 'bendahara', 'admin_badminton'] 
+    },
+    { 
+        key: 'wasit_badminton', 
+        label: 'Wasit Badminton', 
+        icon: Swords, 
+        roles: ['super_admin', 'admin_badminton', 'wasit'] 
+    },
+    { 
+        key: 'tenis', 
+        label: 'Tenis Meja', 
+        icon: CircleDot, 
+        roles: ['super_admin', 'bendahara', 'admin_tenis_meja'] 
+    },
+    { 
+        key: 'keuangan', 
+        label: 'Keuangan', 
+        icon: Wallet, 
+        roles: ['super_admin', 'bendahara'] 
+    },
 ]
 
 const ROLE_LABEL: Record<string, string> = {
@@ -29,6 +75,7 @@ const ROLE_LABEL: Record<string, string> = {
     admin_badminton: 'Admin Badminton',
     admin_tenis_meja: 'Admin Tenis Meja',
     bendahara: 'Bendahara',
+    wasit: 'Wasit Lapangan',
 }
 
 interface AdminSidebarProps {

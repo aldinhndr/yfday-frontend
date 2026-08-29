@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom'
 import RequireAdmin from '../components/RequireAdmin'
 import { useAuth } from '../context/AuthContext'
 import AdminSidebar, { type AdminSection } from '../components/admin/AdminSidebar'
+import BadmintonDepositSection, { type BadmintonTeamSummary } from './BadmintonDeposit'
+import WasitBadmintonSection from './WasitBadmintonSkor'
 
 export interface AdminUser {
     id: string
@@ -53,6 +55,7 @@ export default function AdminDashboard() {
     const [registrations, setRegistrations] = useState<RegistrationRow[]>([])
     const [section, setSection] = useState<AdminSection>('overview')
     const [badmintonSubFilter, setBadmintonSubFilter] = useState<string>('all')
+    const [badmintonTeams, setBadmintonTeams] = useState<BadmintonTeamSummary[]>([])
     const [fetching, setFetching] = useState(true)
 
     const [selectedRow, setSelectedRow] = useState<RegistrationRow | null>(null)
@@ -66,15 +69,20 @@ export default function AdminDashboard() {
             const headers = { Authorization: `Bearer ${session.access_token}` }
             const apiBase = import.meta.env.VITE_API_URL
 
-            const [resStats, resRegs] = await Promise.all([
+            const [resStats, resRegs, resBadminton] = await Promise.all([
                 fetch(`${apiBase}/api/admin/stats`, { headers }),
                 fetch(`${apiBase}/api/admin/registrations`, { headers }),
+                fetch(`${apiBase}/api/badminton/admin/summary`, { headers }).catch(() => null)
             ])
 
             if (resStats.ok) setStats(await resStats.json())
             if (resRegs.ok) {
                 const regData = await resRegs.json()
                 setRegistrations(regData.data || [])
+            }
+            if (resBadminton && resBadminton.ok) {
+                const bData = await resBadminton.json()
+                setBadmintonTeams(bData.data || [])
             }
         } catch (err) {
             console.error('Error fetching admin data:', err)
@@ -132,7 +140,7 @@ export default function AdminDashboard() {
     const formatLabel = (key: string) => key.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
     const isMediaUrl = (val: any) => typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://'))
 
-    // Rekonsiliasi Keuangan
+    // Rekap Keuangan
     const financeRows = registrations.filter((r) => HTM[r._lomba])
     const financeSummary = Object.keys(HTM).map((lomba) => {
         const rows = financeRows.filter((r) => r._lomba === lomba)
@@ -159,33 +167,32 @@ export default function AdminDashboard() {
         <RequireAdmin>
             {(admin: AdminUser) => (
                 <div className="min-h-screen bg-night text-cream">
+                    {/* SIDEBAR TUNGGAL TERPADU */}
                     <AdminSidebar role={admin.role} email={admin.email} active={section} onChange={setSection} />
 
                     <main className="lg:pl-64 pt-16 lg:pt-0">
                         <div className="max-w-6xl mx-auto px-6 py-8">
 
-                            {/* ============ OVERVIEW ============ */}
+                            {/* 1. RINGKASAN / OVERVIEW */}
                             {section === 'overview' && (
                                 <>
-                                    <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
-                                        <div>
-                                            <h1 className="font-display text-2xl sm:text-3xl font-bold">Ringkasan</h1>
-                                            <p className="text-sm text-cream/50 mt-1">Total pendaftaran seluruh cabang lomba Youth Fun Day 2026</p>
-                                        </div>
+                                    <div className="mb-6">
+                                        <h1 className="font-display text-2xl sm:text-3xl font-bold">Ringkasan</h1>
+                                        <p className="text-sm text-cream/50 mt-1">Total pendaftaran seluruh cabang lomba Youth Fun Day 2026</p>
                                     </div>
 
-                                    {/* SHORTCUT TURNAMEN PES KHUSUS HARI-H */}
+                                    {/* SHORTCUT TURNAMEN PES */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                                         <Link
                                             to="/admin/rolling/pes"
                                             className="group bg-gradient-to-br from-[#3B1E7A]/60 to-[#150B2E] border border-[#A78BFA]/30 hover:border-[#A78BFA] p-5 rounded-2xl transition-all shadow-lg flex items-center justify-between"
                                         >
                                             <div>
-                                                <span className="text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider bg-[#A78BFA]/10 px-2 py-0.5 rounded border border-[#A78BFA]/20">Ruang Kontrol</span>
-                                                <h3 className="font-display text-lg font-bold text-white mt-1.5 group-hover:text-[#A78BFA] transition-colors">🎮 Controller Rolling PES</h3>
-                                                <p className="text-xs text-cream/60 mt-0.5">Layar 1 — Input nama tim, pilih slot, & undi posisi bagan</p>
+                                                <span className="text-[10px] font-mono font-bold text-[#A78BFA] uppercase tracking-wider bg-[#A78BFA]/10 px-2 py-0.5 rounded border border-[#A78BFA]/20">PES Control</span>
+                                                <h3 className="font-display text-base font-bold text-white mt-1 group-hover:text-[#A78BFA] transition-colors">🎮 Controller Rolling PES</h3>
+                                                <p className="text-[11px] text-cream/60 mt-0.5">Layar 1 — Input &amp; undian bagan</p>
                                             </div>
-                                            <span className="text-xl text-[#A78BFA] group-hover:translate-x-1 transition-transform">→</span>
+                                            <span className="text-lg text-[#A78BFA] group-hover:translate-x-1 transition-transform">→</span>
                                         </Link>
 
                                         <a
@@ -195,11 +202,11 @@ export default function AdminDashboard() {
                                             className="group bg-gradient-to-br from-[#0c2a4d]/60 to-[#0a0716] border border-[#38BDF8]/30 hover:border-[#38BDF8] p-5 rounded-2xl transition-all shadow-lg flex items-center justify-between"
                                         >
                                             <div>
-                                                <span className="text-[10px] font-mono font-bold text-[#38BDF8] uppercase tracking-wider bg-[#38BDF8]/10 px-2 py-0.5 rounded border border-[#38BDF8]/20">Monitor Eksternal</span>
-                                                <h3 className="font-display text-lg font-bold text-white mt-1.5 group-hover:text-[#38BDF8] transition-colors">🖥️ Panggung Proyektor PES</h3>
-                                                <p className="text-xs text-cream/60 mt-0.5">Layar 2 — Tampilan bagan sinkron real-time untuk penonton</p>
+                                                <span className="text-[10px] font-mono font-bold text-[#38BDF8] uppercase tracking-wider bg-[#38BDF8]/10 px-2 py-0.5 rounded border border-[#38BDF8]/20">PES Display</span>
+                                                <h3 className="font-display text-base font-bold text-white mt-1 group-hover:text-[#38BDF8] transition-colors">🖥️ Panggung Proyektor PES</h3>
+                                                <p className="text-[11px] text-cream/60 mt-0.5">Layar 2 — Bagan sinkron proyektor</p>
                                             </div>
-                                            <span className="text-xl text-[#38BDF8] group-hover:translate-x-1 transition-transform">↗</span>
+                                            <span className="text-lg text-[#38BDF8] group-hover:translate-x-1 transition-transform">↗</span>
                                         </a>
                                     </div>
 
@@ -235,7 +242,25 @@ export default function AdminDashboard() {
                                 </>
                             )}
 
-                            {/* ============ PES / BADMINTON / TENIS ============ */}
+                            {/* 2. MEJA DEPOSIT & KOK BADMINTON */}
+                            {section === 'badminton_deposit' && (
+                                <BadmintonDepositSection
+                                    teams={badmintonTeams}
+                                    onRefresh={fetchData}
+                                    token={session?.access_token}
+                                />
+                            )}
+
+                            {/* 3. WASIT BADMINTON (SCORER & KOK) */}
+                            {section === 'wasit_badminton' && (
+                                <WasitBadmintonSection
+                                    teams={badmintonTeams}
+                                    onCockUsed={fetchData}
+                                    token={session?.access_token}
+                                />
+                            )}
+
+                            {/* 4. PENDAFTAR LOMBA (PES / BADMINTON / TENIS MEJA) */}
                             {lombaSection && (
                                 <>
                                     <div className="mb-6 flex flex-wrap justify-between items-center gap-4">
@@ -244,7 +269,6 @@ export default function AdminDashboard() {
                                             <p className="text-sm text-cream/50 mt-1">{filteredRows.length} pendaftar</p>
                                         </div>
 
-                                        {/* Shortcut khusus bila sedang membuka tab PES */}
                                         {lombaSection === 'pes' && (
                                             <div className="flex gap-2">
                                                 <Link
@@ -264,22 +288,6 @@ export default function AdminDashboard() {
                                             </div>
                                         )}
                                     </div>
-
-                                    {lombaSection === 'badminton' && stats?.by_lomba?.badminton?.sub_categories && (
-                                        <div className="bg-night2/60 border border-gold/20 rounded-2xl p-6 mb-6">
-                                            <h3 className="font-display text-xs font-bold text-gold uppercase tracking-wider mb-4">Statistik Per Kategori</h3>
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                {Object.entries(stats.by_lomba.badminton.sub_categories).map(([kat, val]) => (
-                                                    <div key={kat} className="bg-night p-4 rounded-xl border border-cream/10">
-                                                        <p className="text-xs text-cream/50 uppercase font-semibold">{kat}</p>
-                                                        <p className="font-display text-2xl font-bold text-cream mt-1">
-                                                            {val.pendaftar} <span className="text-xs font-normal text-cream/50">Tim ({val.total_slot} Slot)</span>
-                                                        </p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
 
                                     {lombaSection === 'badminton' && (
                                         <div className="flex items-center gap-3 mb-6">
@@ -313,7 +321,7 @@ export default function AdminDashboard() {
                                 </>
                             )}
 
-                            {/* ============ KEUANGAN ============ */}
+                            {/* 5. KEUANGAN & BUKTI BAYAR */}
                             {section === 'keuangan' && (
                                 <>
                                     <div className="mb-6">
@@ -401,7 +409,7 @@ export default function AdminDashboard() {
                         </div>
                     </main>
 
-                    {/* ============ MODAL INSPEKSI ============ */}
+                    {/* MODAL INSPEKSI FORM */}
                     {selectedRow && (
                         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
                             <div className="bg-night2 border border-cream/20 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 space-y-6">
